@@ -45,70 +45,69 @@ export async function ensureSchema(): Promise<void> {
     console.warn('[Database] ensureSchema skipped: no DB connection');
     return;
   }
-  try {
-    // Create enums first (ignore if already exist)
-    await _rawClient.unsafe(`
-      DO $ BEGIN
-        CREATE TYPE gender AS ENUM ('male', 'female', 'other');
-      EXCEPTION WHEN duplicate_object THEN NULL; END $;
 
-      DO $ BEGIN
-        CREATE TYPE role AS ENUM ('user', 'admin');
-      EXCEPTION WHEN duplicate_object THEN NULL; END $;
-    `);
-
-    await _rawClient.unsafe(`
-      CREATE TABLE IF NOT EXISTS users (
-        id          SERIAL PRIMARY KEY,
-        "openId"    VARCHAR(64) NOT NULL UNIQUE,
-        name        TEXT,
-        email       VARCHAR(320),
-        age         INTEGER,
-        gender      gender,
-        avatar      TEXT,
-        bio         TEXT,
-        "isOnline"  BOOLEAN NOT NULL DEFAULT false,
-        "lastSeen"  TIMESTAMP NOT NULL DEFAULT now(),
-        "loginMethod" VARCHAR(64),
-        role        role NOT NULL DEFAULT 'user',
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "lastSignedIn" TIMESTAMP NOT NULL DEFAULT now()
-      );
-
-      CREATE TABLE IF NOT EXISTS messages (
-        id           SERIAL PRIMARY KEY,
-        "senderId"   INTEGER NOT NULL,
-        "receiverId" INTEGER NOT NULL,
-        content      TEXT NOT NULL,
-        "isRead"     BOOLEAN NOT NULL DEFAULT false,
-        "createdAt"  TIMESTAMP NOT NULL DEFAULT now()
-      );
-
-      CREATE TABLE IF NOT EXISTS connections (
-        id          SERIAL PRIMARY KEY,
-        "userId1"   INTEGER NOT NULL,
-        "userId2"   INTEGER NOT NULL,
-        "startedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "endedAt"   TIMESTAMP,
-        duration    INTEGER,
-        "createdAt" TIMESTAMP NOT NULL DEFAULT now()
-      );
-
-      CREATE TABLE IF NOT EXISTS blocks (
-        id              SERIAL PRIMARY KEY,
-        "userId"        INTEGER NOT NULL,
-        "blockedUserId" INTEGER NOT NULL,
-        reason          TEXT,
-        "createdAt"     TIMESTAMP NOT NULL DEFAULT now()
-      );
-    `);
-
-    console.log('[Database] Schema ready');
-  } catch (error) {
-    console.error('[Database] ensureSchema failed:', error);
-    // Non-fatal — server will still start; individual queries may fail
+  // Create enums one at a time (each in its own statement to isolate failures)
+  for (const stmt of [
+    `DO $BEGIN CREATE TYPE gender AS ENUM ('male','female','other'); EXCEPTION WHEN duplicate_object THEN NULL; END$`,
+    `DO $BEGIN CREATE TYPE role   AS ENUM ('user','admin');          EXCEPTION WHEN duplicate_object THEN NULL; END$`,
+  ]) {
+    try { await _rawClient.unsafe(stmt); } catch { /* already exists */ }
   }
+
+  // Create tables (IF NOT EXISTS is safe to run repeatedly)
+  const tables = [
+    `CREATE TABLE IF NOT EXISTS users (
+       id            SERIAL PRIMARY KEY,
+       "openId"      VARCHAR(64) NOT NULL UNIQUE,
+       name          TEXT,
+       email         VARCHAR(320),
+       age           INTEGER,
+       gender        gender,
+       avatar        TEXT,
+       bio           TEXT,
+       "isOnline"    BOOLEAN NOT NULL DEFAULT false,
+       "lastSeen"    TIMESTAMP NOT NULL DEFAULT now(),
+       "loginMethod" VARCHAR(64),
+       role          role NOT NULL DEFAULT 'user',
+       "createdAt"   TIMESTAMP NOT NULL DEFAULT now(),
+       "updatedAt"   TIMESTAMP NOT NULL DEFAULT now(),
+       "lastSignedIn" TIMESTAMP NOT NULL DEFAULT now()
+     )`,
+    `CREATE TABLE IF NOT EXISTS messages (
+       id           SERIAL PRIMARY KEY,
+       "senderId"   INTEGER NOT NULL,
+       "receiverId" INTEGER NOT NULL,
+       content      TEXT NOT NULL,
+       "isRead"     BOOLEAN NOT NULL DEFAULT false,
+       "createdAt"  TIMESTAMP NOT NULL DEFAULT now()
+     )`,
+    `CREATE TABLE IF NOT EXISTS connections (
+       id          SERIAL PRIMARY KEY,
+       "userId1"   INTEGER NOT NULL,
+       "userId2"   INTEGER NOT NULL,
+       "startedAt" TIMESTAMP NOT NULL DEFAULT now(),
+       "endedAt"   TIMESTAMP,
+       duration    INTEGER,
+       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+     )`,
+    `CREATE TABLE IF NOT EXISTS blocks (
+       id              SERIAL PRIMARY KEY,
+       "userId"        INTEGER NOT NULL,
+       "blockedUserId" INTEGER NOT NULL,
+       reason          TEXT,
+       "createdAt"     TIMESTAMP NOT NULL DEFAULT now()
+     )`,
+  ];
+
+  for (const stmt of tables) {
+    try {
+      await _rawClient.unsafe(stmt);
+    } catch (err) {
+      console.error('[Database] Failed to create table:', err);
+    }
+  }
+
+  console.log('[Database] Schema ready');
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -176,8 +175,13 @@ export async function getUserByOpenId(openId: string) {
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-  return result.length > 0 ? result[0] : undefined;
+  try {
+    const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (err) {
+    console.warn('[Database] getUserByOpenId failed (table may not exist yet):', err);
+    return undefined;
+  }
 }
 
 export async function saveUserProfile(userId: number, data: {
