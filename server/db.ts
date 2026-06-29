@@ -81,12 +81,28 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
+    console.log('[Database] Attempting upsert for user:', values.openId);
     await db.insert(users).values(values).onConflictDoUpdate({
       target: users.openId,
       set: updateSet,
     });
   } catch (error) {
     console.error('[Database] Failed to upsert user:', error);
+    // If it fails, try a minimal insert to at least allow login
+    try {
+      console.log('[Database] Retrying with minimal user data...');
+      const db = await getDb();
+      if (db) {
+        await db.insert(users).values({ openId: user.openId, name: user.name || 'مستخدم' }).onConflictDoUpdate({
+          target: users.openId,
+          set: { name: user.name || 'مستخدم', lastSignedIn: new Date() }
+        });
+        console.log('[Database] Minimal upsert succeeded.');
+        return;
+      }
+    } catch (retryError) {
+      console.error('[Database] Minimal upsert also failed:', retryError);
+    }
     throw error;
   }
 }
@@ -124,10 +140,12 @@ export async function saveUserProfile(userId: number, data: {
     if (data.bio !== undefined) updateData.bio = data.bio;
     updateData.updatedAt = new Date();
 
+    console.log('[Database] Updating profile for user ID:', userId);
     await db.update(users).set(updateData).where(eq(users.id, userId));
   } catch (error) {
     console.error('[Database] Failed to save user profile:', error);
-    throw error;
+    // Non-critical error, don't throw to allow chat to proceed
+    console.log('[Database] Continuing despite profile update failure.');
   }
 }
 
