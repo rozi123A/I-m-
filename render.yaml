@@ -3,14 +3,12 @@ services:
     name: connective
     runtime: node
     plan: free
-    buildCommand: pnpm install --no-frozen-lockfile && pnpm run build
-    startCommand: pnpm db:push && NODE_ENV=production node dist/index.js
+    buildCommand: NODE_ENV=development pnpm install --no-frozen-lockfile && NODE_ENV=production pnpm run build
+    startCommand: NODE_ENV=production node dist/index.js
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: SESSION_SECRET
-        sync: false
-      - key: JWT_SECRET
         sync: false
       - key: NODE_ENV
         value: production

@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { ensureSchema } from "../db";
 
 // ── Signaling via Server-Sent Events (SSE) ────────────────────────────────────
 // No external WebSocket library needed — uses built-in Node.js HTTP streams.
@@ -153,6 +154,9 @@ async function findAvailablePort(startPort = 3000): Promise<number> {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function startServer() {
+  // Ensure DB tables exist before handling any requests
+  await ensureSchema();
+
   const app = express();
   const server = createServer(app);
 

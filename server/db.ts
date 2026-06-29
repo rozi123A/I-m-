@@ -18,19 +18,97 @@ function cleanDbUrl(url: string): string {
 }
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _rawClient: ReturnType<typeof postgres> | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       const url = cleanDbUrl(process.env.DATABASE_URL);
-      const client = postgres(url, { ssl: 'require', max: 10 });
-      _db = drizzle(client);
+      _rawClient = postgres(url, { ssl: 'require', max: 10 });
+      _db = drizzle(_rawClient);
     } catch (error) {
       console.warn('[Database] Failed to connect:', error);
       _db = null;
     }
   }
   return _db;
+}
+
+/**
+ * Creates all required tables if they don't exist yet.
+ * Safe to call on every startup — uses IF NOT EXISTS / DO NOTHING.
+ * This replaces the need for drizzle-kit CLI in production.
+ */
+export async function ensureSchema(): Promise<void> {
+  const db = await getDb();
+  if (!db || !_rawClient) {
+    console.warn('[Database] ensureSchema skipped: no DB connection');
+    return;
+  }
+  try {
+    // Create enums first (ignore if already exist)
+    await _rawClient.unsafe(`
+      DO $ BEGIN
+        CREATE TYPE gender AS ENUM ('male', 'female', 'other');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $;
+
+      DO $ BEGIN
+        CREATE TYPE role AS ENUM ('user', 'admin');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $;
+    `);
+
+    await _rawClient.unsafe(`
+      CREATE TABLE IF NOT EXISTS users (
+        id          SERIAL PRIMARY KEY,
+        "openId"    VARCHAR(64) NOT NULL UNIQUE,
+        name        TEXT,
+        email       VARCHAR(320),
+        age         INTEGER,
+        gender      gender,
+        avatar      TEXT,
+        bio         TEXT,
+        "isOnline"  BOOLEAN NOT NULL DEFAULT false,
+        "lastSeen"  TIMESTAMP NOT NULL DEFAULT now(),
+        "loginMethod" VARCHAR(64),
+        role        role NOT NULL DEFAULT 'user',
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "lastSignedIn" TIMESTAMP NOT NULL DEFAULT now()
+      );
+
+      CREATE TABLE IF NOT EXISTS messages (
+        id           SERIAL PRIMARY KEY,
+        "senderId"   INTEGER NOT NULL,
+        "receiverId" INTEGER NOT NULL,
+        content      TEXT NOT NULL,
+        "isRead"     BOOLEAN NOT NULL DEFAULT false,
+        "createdAt"  TIMESTAMP NOT NULL DEFAULT now()
+      );
+
+      CREATE TABLE IF NOT EXISTS connections (
+        id          SERIAL PRIMARY KEY,
+        "userId1"   INTEGER NOT NULL,
+        "userId2"   INTEGER NOT NULL,
+        "startedAt" TIMESTAMP NOT NULL DEFAULT now(),
+        "endedAt"   TIMESTAMP,
+        duration    INTEGER,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+      );
+
+      CREATE TABLE IF NOT EXISTS blocks (
+        id              SERIAL PRIMARY KEY,
+        "userId"        INTEGER NOT NULL,
+        "blockedUserId" INTEGER NOT NULL,
+        reason          TEXT,
+        "createdAt"     TIMESTAMP NOT NULL DEFAULT now()
+      );
+    `);
+
+    console.log('[Database] Schema ready');
+  } catch (error) {
+    console.error('[Database] ensureSchema failed:', error);
+    // Non-fatal — server will still start; individual queries may fail
+  }
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
