@@ -160,6 +160,10 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Trust the reverse proxy (Render, nginx, etc.) so req.protocol
+  // reflects HTTPS correctly → cookies get secure flag properly.
+  app.set("trust proxy", 1);
+
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 

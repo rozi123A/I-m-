@@ -39,10 +39,14 @@ export function getSessionCookieOptions(
   //       ? hostname
   //       : undefined;
 
+  // In production (Render/any HTTPS host) always mark secure.
+  // sameSite:'none' requires secure:true or modern browsers reject the cookie.
+  const secure = process.env.NODE_ENV === "production" || isSecureRequest(req);
+
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
-    secure: isSecureRequest(req),
+    sameSite: secure ? "none" : "lax",
+    secure,
   };
 }
