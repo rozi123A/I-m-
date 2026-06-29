@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: chat-live-connectee
+    name: connective
     runtime: node
     plan: free
     buildCommand: pnpm install --no-frozen-lockfile && pnpm run build
@@ -10,3 +10,7 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: SESSION_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
