@@ -19,7 +19,7 @@ export const appRouter = router({
   }),
 
   users: router({
-    quickStart: publicProcedure
+    guestLogin: publicProcedure
       .input(z.object({
         name: z.string().min(1, "الاسم مطلوب"),
         age: z.number().min(13).max(100),
@@ -29,27 +29,22 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const guestOpenId = `guest_${nanoid()}`;
 
-        try {
-          await upsertUser({
-            openId: guestOpenId,
-            name: input.name,
-            loginMethod: 'guest',
-            lastSignedIn: new Date(),
-          });
-          
-          const user = await getUserByOpenId(guestOpenId);
-          if (user) {
-            await saveUserProfile(user.id, {
-              name: input.name,
-              age: input.age,
-              gender: input.gender,
-              avatar: input.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(input.name)}`,
-            });
-          }
-        } catch (dbError) {
-          console.error('[Critical] DB failed, but proceeding as guest:', dbError);
-          // Proceed anyway to allow the user to chat
-        }
+        await upsertUser({
+          openId: guestOpenId,
+          name: input.name,
+          loginMethod: 'guest',
+          lastSignedIn: new Date(),
+        });
+
+        const user = await getUserByOpenId(guestOpenId);
+        if (!user) throw new Error("فشل انشاء المستخدم");
+
+        await saveUserProfile(user.id, {
+          name: input.name,
+          age: input.age,
+          gender: input.gender,
+          avatar: input.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(input.name)}`,
+        });
 
         const sessionToken = await sdk.createSessionToken(guestOpenId, {
           name: input.name,
@@ -59,7 +54,7 @@ export const appRouter = router({
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-        return { success: true, token: sessionToken };
+        return { success: true };
       }),
 
     saveProfile: protectedProcedure
