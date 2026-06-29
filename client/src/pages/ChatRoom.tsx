@@ -393,11 +393,36 @@ export default function ChatRoom() {
           {/* Switch Camera Button (Premium) */}
           <div className="flex flex-col items-center group relative">
             <button
-              title="Switch Camera (Coming Soon)"
-              disabled
-              className="rounded-full p-3 bg-gradient-to-br from-yellow-400 to-yellow-500 opacity-70 cursor-not-allowed transition-all shadow-lg relative hover:shadow-xl">
+              onClick={async () => {
+                if (localStreamRef.current) {
+                  try {
+                    const videoTrack = localStreamRef.current.getVideoTracks()[0];
+                    if (videoTrack) {
+                      const currentSettings = videoTrack.getSettings();
+                      const newFacingMode = currentSettings.facingMode === 'user' ? 'environment' : 'user';
+                      
+                      localStreamRef.current.getTracks().forEach(t => t.stop());
+                      const newStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: newFacingMode },
+                        audio: true
+                      });
+                      localStreamRef.current = newStream;
+                      if (localVideoRef.current) localVideoRef.current.srcObject = newStream;
+                      
+                      if (pcRef.current) {
+                        const senders = pcRef.current.getSenders();
+                        const videoSender = senders.find(s => s.track?.kind === 'video');
+                        if (videoSender) videoSender.replaceTrack(newStream.getVideoTracks()[0]);
+                      }
+                    }
+                  } catch (err) {
+                    console.error("Failed to switch camera:", err);
+                  }
+                }
+              }}
+              title="Switch Camera"
+              className="rounded-full p-3 bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 transition-all shadow-lg relative hover:shadow-xl hover:scale-110">
               <Smartphone className="w-6 h-6 text-white" />
-              <Lock className="w-3 h-3 text-white absolute top-1 right-1" />
             </button>
             <span className="text-yellow-300 text-xs mt-2 font-bold">Switch</span>
             <span className="text-yellow-400 text-xs font-extrabold">PREMIUM</span>

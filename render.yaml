@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     buildCommand: pnpm install --no-frozen-lockfile && pnpm run build
-    startCommand: NODE_ENV=production node dist/index.js
+    startCommand: pnpm db:push && NODE_ENV=production node dist/index.js
     envVars:
       - key: DATABASE_URL
         sync: false
