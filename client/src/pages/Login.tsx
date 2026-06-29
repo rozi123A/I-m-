@@ -28,7 +28,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const guestLoginMutation = trpc.users.guestLogin.useMutation();
+  const quickStartMutation = trpc.users.quickStart.useMutation();
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
@@ -43,7 +43,7 @@ export default function Login() {
     
     setIsLoading(true);
     try {
-      const result = await guestLoginMutation.mutateAsync({
+      const result = await quickStartMutation.mutateAsync({
         name: name.trim(),
         age: parseInt(age) || 25,
         gender: gender as 'male' | 'female' | 'other',
