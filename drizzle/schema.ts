@@ -16,6 +16,7 @@ export const users = pgTable("users", {
   avatar: text("avatar"),
   bio: text("bio"),
   credits: integer("credits").default(100).notNull(),
+  isPremium: boolean("isPremium").default(false).notNull(),
   isOnline: boolean("isOnline").default(false).notNull(),
   lastSeen: timestamp("lastSeen").defaultNow().notNull(),
   loginMethod: varchar("loginMethod", { length: 64 }),

@@ -286,6 +286,11 @@ export default function ChatRoom() {
   // ── controls ───────────────────────────────────────────────────────────────
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const toggleCamera = async () => {
+    if (!(user as any)?.isPremium) {
+      alert("هذه الميزة متاحة فقط لمشتركي Premium. يرجى زيارة المتجر للاشتراك.");
+      setLocation('/store');
+      return;
+    }
     if (!localStreamRef.current) return;
     const newMode = facingMode === 'user' ? 'environment' : 'user';
     try {
@@ -625,8 +630,9 @@ export default function ChatRoom() {
           </div>
           <div className="flex flex-col items-center">
             <button onClick={toggleCamera}
-              className="rounded-full p-3 transition-all shadow-lg hover:scale-110 bg-purple-500 hover:bg-purple-600">
+              className={`rounded-full p-3 transition-all shadow-lg hover:scale-110 ${(user as any)?.isPremium ? 'bg-purple-500 hover:bg-purple-600' : 'bg-gray-500 opacity-70'}`}>
               <Smartphone className="w-6 h-6 text-white" />
+              {!(user as any)?.isPremium && <Lock className="w-3 h-3 text-white absolute top-0 right-0" />}
             </button>
             <span className="text-white text-xs mt-2 font-bold">تبديل</span>
           </div>
