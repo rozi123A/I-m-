@@ -28,15 +28,33 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
 
-      // Detect country from IP
+      // Detect country from IP — best-effort, multiple fallbacks
       let detectedCountry: string | null = null;
       try {
-        const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || '';
-        if (ip && ip !== '127.0.0.1' && ip !== '::1') {
-          const geoRes = await fetch(`https://ipapi.co/${ip}/country/`, { signal: AbortSignal.timeout(3000) });
-          if (geoRes.ok) {
-            const code = (await geoRes.text()).trim();
-            if (code.length === 2) detectedCountry = code;
+        // 1) Cloudflare header (most reliable when behind CF)
+        const cfCountry = req.headers['cf-ipcountry'] as string | undefined;
+        if (cfCountry && cfCountry.length === 2 && cfCountry !== 'XX') {
+          detectedCountry = cfCountry;
+        }
+
+        // 2) ip-api.com (free, no key, reliable)
+        if (!detectedCountry) {
+          const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+            || (req.socket.remoteAddress || '').replace('::ffff:', '');
+          if (ip && ip !== '127.0.0.1' && ip !== '::1') {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 4000);
+            try {
+              const geoRes = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode`, { signal: controller.signal });
+              if (geoRes.ok) {
+                const data = await geoRes.json() as { countryCode?: string };
+                if (data.countryCode && data.countryCode.length === 2) {
+                  detectedCountry = data.countryCode;
+                }
+              }
+            } finally {
+              clearTimeout(timer);
+            }
           }
         }
       } catch { /* geo detection is best-effort */ }
@@ -47,8 +65,8 @@ export function registerOAuthRoutes(app: Express) {
         email: userInfo.email ?? null,
         loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
         lastSignedIn: new Date(),
-        ...(detectedCountry ? { country: detectedCountry } : {}),
-      } as any);
+        country: detectedCountry,
+      });
 
       const sessionToken = await sdk.createSessionToken(userInfo.openId, {
         name: userInfo.name || "",
