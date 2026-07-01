@@ -320,7 +320,6 @@ export default function ChatRoom() {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const toggleCamera = async () => {
     if (!(user as any)?.isPremium) {
-      toast.error("هذه الميزة متاحة فقط لمشتركي Premium.");
       sessionStorage.setItem('chat_auto_start', 'true');
       setLocation('/store?from=chat');
       return;
@@ -329,21 +328,23 @@ export default function ChatRoom() {
     
     const newMode = facingMode === 'user' ? 'environment' : 'user';
     try {
-      // Create new stream with specified facing mode
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: { exact: newMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: true
-      }).catch(async () => {
-        // Fallback if exact mode fails (some browsers/devices)
-        return await navigator.mediaDevices.getUserMedia({
+      // Try exact facing mode first, then fallback
+      let newStream: MediaStream;
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: { exact: newMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: true
+        });
+      } catch {
+        newStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: newMode },
           audio: true
         });
-      });
+      }
       
       // Replace video track in existing PeerConnection
       if (pcRef.current) {
@@ -355,8 +356,6 @@ export default function ChatRoom() {
         }
       }
 
-      // Stop only old video tracks to keep audio seamless if possible, 
-      // but here we replace the whole stream for simplicity
       localStreamRef.current.getTracks().forEach(t => t.stop());
       
       localStreamRef.current = newStream;
@@ -369,7 +368,8 @@ export default function ChatRoom() {
       toast.success(newMode === 'user' ? "تم التبديل للكاميرا الأمامية" : "تم التبديل للكاميرا الخلفية");
     } catch (e) {
       console.error("Failed to switch camera:", e);
-      toast.error("عذراً، لا يمكن تبديل الكاميرا على هذا الجهاز");
+      sessionStorage.setItem('chat_auto_start', 'true');
+      setLocation('/store?from=chat');
     }
   };
   const toggleMic   = () => { localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = !isMicOn; }); setIsMicOn(v => !v); };
