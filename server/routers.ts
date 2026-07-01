@@ -6,6 +6,7 @@ import {
   saveUserProfile, getUsersByGender, getMessages, saveMessage,
   upsertUser, getUserByOpenId, getRecentUsers, incrementProfileViews,
   getUserCredits, deductCredits, addCredits, saveGift, upgradeToPremium,
+  getCountryStats,
 } from "./db";
 import { sdk } from "./_core/sdk";
 import { nanoid } from "nanoid";
@@ -71,6 +72,9 @@ export const appRouter = router({
     getRecent: publicProcedure
       .input(z.number().min(1).max(50).optional())
       .query(async ({ input }) => getRecentUsers(input ?? 20)),
+
+    countryStats: publicProcedure
+      .query(async () => getCountryStats()),
 
     recordView: publicProcedure
       .input(z.number())
