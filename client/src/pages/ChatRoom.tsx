@@ -690,46 +690,46 @@ export default function ChatRoom() {
       <div className="mt-3 bg-gray-900/80 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
 
         {/* Row 1 — 4 primary toggles */}
-        <div className="grid grid-cols-4 divide-x divide-x-reverse divide-white/5">
+        <div className="grid grid-cols-4 gap-px bg-white/5">
           {/* Mic */}
           <button
             onClick={toggleMic}
-            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${isMicOn ? 'text-white' : 'text-red-400 bg-red-500/10'}`}
+            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${isMicOn ? 'text-blue-300' : 'text-red-400 bg-red-500/10'}`}
           >
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md ${isMicOn ? 'bg-white/10' : 'bg-red-500'}`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${isMicOn ? 'bg-gradient-to-br from-blue-500 to-blue-700 shadow-blue-900/50' : 'bg-gradient-to-br from-red-500 to-red-700 shadow-red-900/50'}`}>
               {isMicOn ? <Mic className="w-5 h-5 text-white" /> : <MicOff className="w-5 h-5 text-white" />}
             </div>
-            <span className="text-[11px] font-semibold">{isMicOn ? 'ميكروفون' : 'مكتوم'}</span>
+            <span className="text-[11px] font-bold">{isMicOn ? 'ميكروفون' : 'مكتوم'}</span>
           </button>
 
           {/* Camera */}
           <button
             onClick={toggleVideo}
-            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${isVideoOn ? 'text-white' : 'text-red-400 bg-red-500/10'}`}
+            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${isVideoOn ? 'text-indigo-300' : 'text-red-400 bg-red-500/10'}`}
           >
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md ${isVideoOn ? 'bg-white/10' : 'bg-red-500'}`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${isVideoOn ? 'bg-gradient-to-br from-indigo-500 to-violet-700 shadow-violet-900/50' : 'bg-gradient-to-br from-red-500 to-red-700 shadow-red-900/50'}`}>
               {isVideoOn ? <Video className="w-5 h-5 text-white" /> : <VideoOff className="w-5 h-5 text-white" />}
             </div>
-            <span className="text-[11px] font-semibold">{isVideoOn ? 'كاميرا' : 'مطفأة'}</span>
+            <span className="text-[11px] font-bold">{isVideoOn ? 'كاميرا' : 'مطفأة'}</span>
           </button>
 
           {/* Speaker */}
           <button
             onClick={() => setIsSpeakerOn(v => !v)}
-            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${isSpeakerOn ? 'text-white' : 'text-red-400 bg-red-500/10'}`}
+            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${isSpeakerOn ? 'text-teal-300' : 'text-red-400 bg-red-500/10'}`}
           >
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md ${isSpeakerOn ? 'bg-white/10' : 'bg-red-500'}`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${isSpeakerOn ? 'bg-gradient-to-br from-teal-500 to-cyan-600 shadow-teal-900/50' : 'bg-gradient-to-br from-red-500 to-red-700 shadow-red-900/50'}`}>
               {isSpeakerOn ? <Volume2 className="w-5 h-5 text-white" /> : <VolumeX className="w-5 h-5 text-white" />}
             </div>
-            <span className="text-[11px] font-semibold">{isSpeakerOn ? 'صوت' : 'صامت'}</span>
+            <span className="text-[11px] font-bold">{isSpeakerOn ? 'صوت' : 'صامت'}</span>
           </button>
 
           {/* Chat */}
           <button
             onClick={() => { setShowChat(v => !v); setUnread(0); }}
-            className={`relative flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${showChat ? 'text-cyan-400 bg-cyan-500/10' : 'text-white'}`}
+            className={`relative flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${showChat ? 'text-cyan-300' : 'text-emerald-300'}`}
           >
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md relative ${showChat ? 'bg-cyan-500' : 'bg-white/10'}`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg relative ${showChat ? 'bg-gradient-to-br from-cyan-500 to-blue-600 shadow-cyan-900/50' : 'bg-gradient-to-br from-emerald-500 to-green-700 shadow-emerald-900/50'}`}>
               <MessageSquare className="w-5 h-5 text-white" />
               {unread > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-black border-2 border-gray-900 px-0.5">
@@ -737,7 +737,7 @@ export default function ChatRoom() {
                 </span>
               )}
             </div>
-            <span className="text-[11px] font-semibold">دردشة</span>
+            <span className="text-[11px] font-bold">دردشة</span>
           </button>
         </div>
 
@@ -745,22 +745,20 @@ export default function ChatRoom() {
         <div className="h-px bg-white/5 mx-4" />
 
         {/* Row 2 — 4 secondary actions */}
-        <div className="grid grid-cols-4 divide-x divide-x-reverse divide-white/5">
+        <div className="grid grid-cols-4 gap-px bg-white/5">
           {/* Camera Switch — Premium */}
           <button
             onClick={toggleCamera}
-            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${(user as any)?.isPremium ? 'text-yellow-300' : 'text-white/30'}`}
+            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${(user as any)?.isPremium ? 'text-yellow-300' : 'text-white/40'}`}
           >
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md relative ${(user as any)?.isPremium ? 'bg-gradient-to-br from-yellow-400 to-amber-500' : 'bg-white/5'}`}>
-              <SwitchCamera className={`w-5 h-5 ${(user as any)?.isPremium ? 'text-gray-900' : 'text-white/30'}`} />
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg relative ${(user as any)?.isPremium ? 'bg-gradient-to-br from-yellow-400 to-amber-600 shadow-amber-900/50' : 'bg-gradient-to-br from-slate-600 to-slate-700'}`}>
+              <SwitchCamera className={`w-5 h-5 ${(user as any)?.isPremium ? 'text-gray-900' : 'text-white/50'}`} />
               {!(user as any)?.isPremium && (
-                <Lock className="w-2.5 h-2.5 text-white/50 absolute top-1 right-1" />
+                <Lock className="w-2.5 h-2.5 text-white/60 absolute top-1 right-1" />
               )}
             </div>
-            <span className="text-[11px] font-semibold leading-tight text-center">
-              {(user as any)?.isPremium
-                ? (facingMode === 'user' ? 'خلفية' : 'أمامية')
-                : <span className="flex items-center gap-0.5">تبديل <Lock className="w-2.5 h-2.5 inline" /></span>}
+            <span className="text-[11px] font-bold leading-tight text-center">
+              {(user as any)?.isPremium ? (facingMode === 'user' ? 'خلفية' : 'أمامية') : 'تبديل 🔒'}
             </span>
           </button>
 
@@ -768,33 +766,33 @@ export default function ChatRoom() {
           <button
             onClick={() => status === 'matched' ? setShowGifts(v => !v) : undefined}
             disabled={status !== 'matched'}
-            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${status === 'matched' ? 'text-orange-300' : 'text-white/20'}`}
+            className={`flex flex-col items-center gap-1.5 py-4 px-2 transition-all active:scale-95 ${status === 'matched' ? 'text-orange-300' : 'text-white/30'}`}
           >
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md ${status === 'matched' ? 'bg-gradient-to-br from-orange-400 to-pink-500' : 'bg-white/5'}`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${status === 'matched' ? 'bg-gradient-to-br from-orange-400 to-pink-600 shadow-orange-900/50' : 'bg-gradient-to-br from-slate-600 to-slate-700'}`}>
               <Gift className="w-5 h-5 text-white" />
             </div>
-            <span className="text-[11px] font-semibold">هدية</span>
+            <span className="text-[11px] font-bold">هدية</span>
           </button>
 
           {/* Store */}
           <button
             onClick={() => { sessionStorage.setItem('chat_auto_start', 'true'); setLocation('/store?from=chat'); }}
-            className="flex flex-col items-center gap-1.5 py-4 px-2 text-purple-300 transition-all active:scale-95"
+            className="flex flex-col items-center gap-1.5 py-4 px-2 text-fuchsia-300 transition-all active:scale-95"
           >
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-600 shadow-md">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-fuchsia-500 to-pink-700 shadow-lg shadow-fuchsia-900/50">
               <ShoppingBag className="w-5 h-5 text-white" />
             </div>
-            <span className="text-[11px] font-semibold">المتجر</span>
+            <span className="text-[11px] font-bold">المتجر</span>
           </button>
 
           {/* Report */}
           <button
-            className="flex flex-col items-center gap-1.5 py-4 px-2 text-white/30 hover:text-rose-400 transition-all active:scale-95"
+            className="flex flex-col items-center gap-1.5 py-4 px-2 text-rose-400 transition-all active:scale-95"
           >
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-white/5 hover:bg-rose-500/20 transition-colors shadow-md">
-              <Flag className="w-5 h-5" />
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-rose-600 to-red-800 shadow-lg shadow-rose-900/50">
+              <Flag className="w-5 h-5 text-white" />
             </div>
-            <span className="text-[11px] font-semibold">إبلاغ</span>
+            <span className="text-[11px] font-bold">إبلاغ</span>
           </button>
         </div>
 
