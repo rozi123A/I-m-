@@ -90,7 +90,7 @@ export default function ChatRoom() {
 
   // ── core state ─────────────────────────────────────────────────────────────
   const queryParams = new URLSearchParams(window.location.search);
-  const autoStart = queryParams.get('autoStart') === 'true';
+  const autoStartParam = queryParams.get('autoStart') === 'true';
   const [status,       setStatus]      = useState<Status>('setup');
   const [peerName,     setPeerName]    = useState('');
   const [peerAvatar,   setPeerAvatar]  = useState('');
@@ -291,13 +291,15 @@ export default function ChatRoom() {
   }, [stopTimer, closePC]);
 
   useEffect(() => {
-    if (autoStart) {
+    const shouldAutoStart = autoStartParam || sessionStorage.getItem('chat_auto_start') === 'true';
+    if (shouldAutoStart && status === 'setup') {
+      sessionStorage.removeItem('chat_auto_start'); // Clear it after use
       const timer = setTimeout(() => {
         startSession('any', 'any');
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [autoStart, startSession]);
+  }, [autoStartParam, status, startSession]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
   useEffect(() => { if (showChat) setUnread(0); }, [showChat]);
@@ -732,7 +734,10 @@ export default function ChatRoom() {
 
           {/* Row 2: Secondary & Action Controls */}
           <div className="flex flex-col items-center gap-1.5">
-            <button onClick={() => setLocation('/store?from=chat')}
+            <button onClick={() => {
+                sessionStorage.setItem('chat_auto_start', 'true');
+                setLocation('/store?from=chat');
+              }}
               className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg hover:brightness-110 active:scale-90">
               <ShoppingBag className="w-5 h-5" />
             </button>
