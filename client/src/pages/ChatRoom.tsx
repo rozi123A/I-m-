@@ -436,20 +436,55 @@ export default function ChatRoom() {
               </div>
             </div>
 
-            {/* Country filter */}
+            {/* Country filter — Premium */}
             <div>
-              <label className="block text-white font-semibold mb-3 text-sm">الدولة</label>
-              <select
-                value={filterCountry}
-                onChange={e => setFilterCountry(e.target.value)}
-                className="w-full bg-white/10 border border-white/20 text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 text-sm"
+              <label className="block text-white font-semibold mb-3 text-sm flex items-center gap-2">
+                الدولة
+                {!(user as any)?.isPremium && (
+                  <span className="text-[10px] bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                    <Lock className="w-2.5 h-2.5" /> Premium
+                  </span>
+                )}
+              </label>
+              <div
+                className="relative"
+                onClick={() => {
+                  if (!(user as any)?.isPremium) {
+                    sessionStorage.setItem('chat_auto_start', 'true');
+                    setLocation('/store?from=chat');
+                  }
+                }}
               >
-                {COUNTRIES.map(c => (
-                  <option key={c.code} value={c.code} className="bg-gray-900 text-white">
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                <select
+                  value={filterCountry}
+                  onChange={e => {
+                    if (!(user as any)?.isPremium) {
+                      sessionStorage.setItem('chat_auto_start', 'true');
+                      setLocation('/store?from=chat');
+                      return;
+                    }
+                    setFilterCountry(e.target.value);
+                  }}
+                  disabled={!(user as any)?.isPremium}
+                  className={`w-full border text-white rounded-2xl px-4 py-3 focus:outline-none text-sm appearance-none ${
+                    (user as any)?.isPremium
+                      ? 'bg-white/10 border-white/20 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30'
+                      : 'bg-white/5 border-yellow-500/30 text-white/40 cursor-pointer'
+                  }`}
+                >
+                  {COUNTRIES.map(c => (
+                    <option key={c.code} value={c.code} className="bg-gray-900 text-white">
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                {!(user as any)?.isPremium && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/30 cursor-pointer gap-2">
+                    <Lock className="w-4 h-4 text-yellow-400" />
+                    <span className="text-yellow-300 text-sm font-bold">اشترك للفلترة بالدولة</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* My profile preview */}
