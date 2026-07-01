@@ -4,8 +4,29 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { toast } from "sonner";
 
 export default function Store() {
+  const { user, mutate: mutateAuth } = useAuth();
+  const upgradeMutation = trpc.gifts.upgrade.useMutation({
+    onSuccess: () => {
+      toast.success("تم تفعيل اشتراك Premium بنجاح! استمتع بالميزات الحصرية.");
+      mutateAuth(); // Refresh user data to update isPremium status
+    },
+    onError: (error) => {
+      toast.error(`فشل الاشتراك: ${error.message}`);
+    }
+  });
+
+  const handleUpgrade = () => {
+    if ((user as any)?.isPremium) {
+      toast.info("أنت مشترك بالفعل في باقة Premium.");
+      return;
+    }
+    upgradeMutation.mutate();
+  };
   const premiumFeatures = [
     {
       title: "تبديل الكاميرا",
@@ -79,8 +100,12 @@ export default function Store() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-6 text-lg rounded-xl shadow-lg transition-all">
-                اشترك الآن
+              <Button 
+                onClick={handleUpgrade}
+                disabled={upgradeMutation.isLoading || (user as any)?.isPremium}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-6 text-lg rounded-xl shadow-lg transition-all"
+              >
+                {(user as any)?.isPremium ? "أنت مشترك بالفعل" : upgradeMutation.isLoading ? "جاري التفعيل..." : "اشترك الآن"}
               </Button>
             </CardFooter>
           </Card>

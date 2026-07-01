@@ -5,7 +5,7 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import {
   saveUserProfile, getUsersByGender, getMessages, saveMessage,
   upsertUser, getUserByOpenId, getRecentUsers,
-  getUserCredits, deductCredits, addCredits, saveGift,
+  getUserCredits, deductCredits, addCredits, saveGift, upgradeToPremium,
 } from "./db";
 import { sdk } from "./_core/sdk";
 import { nanoid } from "nanoid";
@@ -116,6 +116,13 @@ export const appRouter = router({
         await addCredits(ctx.user.id, input);
         const newBalance = await getUserCredits(ctx.user.id);
         return { success: true, newBalance };
+      }),
+
+    /** Upgrade user to premium */
+    upgrade: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await upgradeToPremium(ctx.user.id);
+        return { success: true };
       }),
   }),
 });

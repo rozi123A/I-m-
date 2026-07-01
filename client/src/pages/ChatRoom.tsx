@@ -417,7 +417,14 @@ export default function ChatRoom() {
 
             {/* Start button */}
             <button
-              onClick={() => startSession(filterGender, filterCountry)}
+              onClick={() => {
+                if ((filterGender !== 'any' || filterCountry !== 'any') && !(user as any)?.isPremium) {
+                  alert("فلاتر البحث متاحة فقط لمشتركي Premium. يرجى الاشتراك أو اختيار 'الكل'.");
+                  setLocation('/store');
+                  return;
+                }
+                startSession(filterGender, filterCountry);
+              }}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-bold py-4 rounded-2xl shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center gap-3 text-lg"
             >
               <Search className="w-5 h-5" />

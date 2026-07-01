@@ -74,6 +74,7 @@ export async function ensureSchema(): Promise<void> {
        avatar        TEXT,
        bio           TEXT,
        credits       INTEGER NOT NULL DEFAULT 100,
+       "isPremium"   BOOLEAN NOT NULL DEFAULT false,
        "isOnline"    BOOLEAN NOT NULL DEFAULT false,
        "lastSeen"    TIMESTAMP NOT NULL DEFAULT now(),
        "loginMethod" VARCHAR(64),
@@ -124,9 +125,10 @@ export async function ensureSchema(): Promise<void> {
     }
   }
 
-  // Add credits column to existing tables that predate this migration
+  // Add credits and isPremium columns to existing tables that predate this migration
   try {
     await _rawClient.unsafe(`ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER NOT NULL DEFAULT 100`);
+    await _rawClient.unsafe(`ALTER TABLE users ADD COLUMN IF NOT EXISTS "isPremium" BOOLEAN NOT NULL DEFAULT false`);
   } catch { /* ignore */ }
 
   console.log('[Database] Schema ready');
@@ -352,5 +354,19 @@ export async function saveGift(senderId: number, receiverId: number, giftType: s
     await db.insert(gifts).values({ senderId, receiverId, giftType, cost });
   } catch (err) {
     console.error('[Database] saveGift failed:', err);
+  }
+}
+
+export async function upgradeToPremium(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(users).set({ 
+      isPremium: true,
+      credits: sql`${users.credits} + 100` // 100 points as bonus for premium
+    }).where(eq(users.id, userId));
+  } catch (err) {
+    console.error('[Database] upgradeToPremium failed:', err);
+    throw err;
   }
 }

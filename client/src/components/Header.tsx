@@ -1,4 +1,4 @@
-import { Menu, X, LogOut, Video, UserCircle } from "lucide-react";
+import { Menu, X, LogOut, Video, UserCircle, Star } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -55,6 +55,9 @@ export default function Header() {
                 className="text-gray-800 font-semibold text-sm hover:text-purple-600 transition-colors flex items-center gap-1"
               >
                 {(user as any).name || "المستخدم"}
+                {(user as any).isPremium && (
+                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" title="عضو VIP" />
+                )}
                 <UserCircle className="w-3.5 h-3.5 text-purple-400" />
               </button>
 
@@ -109,8 +112,15 @@ export default function Header() {
                     className="w-10 h-10 rounded-full border-2 border-purple-400 object-cover"
                   />
                   <div>
-                    <p className="font-semibold text-gray-800">{(user as any).name || "المستخدم"}</p>
-                    <p className="text-xs text-gray-500">مسجّل الدخول</p>
+                    <p className="font-semibold text-gray-800 flex items-center gap-1">
+                      {(user as any).name || "المستخدم"}
+                      {(user as any).isPremium && (
+                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {(user as any).isPremium ? "عضو VIP" : "مسجّل الدخول"}
+                    </p>
                   </div>
                 </div>
                 <button onClick={() => { setIsMenuOpen(false); handleProfile(); }}
