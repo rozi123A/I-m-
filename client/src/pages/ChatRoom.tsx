@@ -120,6 +120,7 @@ export default function ChatRoom() {
   const [showFriends, setShowFriends] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('none');
   const [friends, setFriends] = useState<any[]>([]);
+  const [friendReqBanner, setFriendReqBanner] = useState<{name:string;avatar:string} | null>(null);
   const [lastIncomingMsg, setLastIncomingMsg] = useState('');
   const [showReport, setShowReport] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -172,6 +173,10 @@ export default function ChatRoom() {
     if (!mine) {
       setUnread(u => u + 1);
       setLastIncomingMsg(text);
+      // Browser push notification when window is not focused
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+        try { new Notification('رسالة جديدة من ' + name, { body: text, icon: '/favicon.ico' }); } catch {}
+      }
     }
   }, []);
 
@@ -266,6 +271,20 @@ export default function ChatRoom() {
       case 'notification':
         setNotif({ partnerName: msg.partnerName, partnerAvatar: msg.partnerAvatar });
         break;
+      case 'friend-request':
+        setFriendReqBanner({ name: msg.fromName || 'مستخدم', avatar: msg.fromAvatar || '' });
+        toast(`طلب صداقة من ${msg.fromName || 'مستخدم'}`, { icon: '👥' });
+        if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+          try { new Notification('طلب صداقة جديد', { body: `${msg.fromName || 'مستخدم'} يريد إضافتك كصديق`, icon: '/favicon.ico' }); } catch {}
+        }
+        setTimeout(() => setFriendReqBanner(null), 6000);
+        break;
+      case 'friend-accepted':
+        toast.success(`${msg.fromName || 'مستخدم'} قبل طلب صداقتك! 🎉`);
+        if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+          try { new Notification('تم قبول طلب الصداقة', { body: `${msg.fromName || 'مستخدم'} قبل طلب صداقتك`, icon: '/favicon.ico' }); } catch {}
+        }
+        break;
     }
   }, [createPC, signal, addMessage, startTimer, stopTimer, closePC, resetRemote, showGiftAnim, peerName]);
 
@@ -301,6 +320,11 @@ export default function ChatRoom() {
       filterGender: fg,
       filterCountry: fc,
     });
+    // Request browser notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+
     const es = new EventSource(`/api/signal/connect?${params}`);
     esRef.current = es;
     es.onmessage = (e) => { try { handleEvent(JSON.parse(e.data)); } catch { /* ignore */ } };
@@ -983,10 +1007,35 @@ export default function ChatRoom() {
           currentPeerName={peerName}
           currentPeerAvatar={peerAvatar}
           currentPeerId={status === 'matched' ? 'peer_current' : undefined}
+          myPeerId={myId}
           onSendFriendRequest={() => {
             signal('friend-request', { senderName: myName, senderAvatar: myAvatar });
           }}
         />
+      )}
+
+      {/* Friend Request Banner */}
+      {friendReqBanner && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-3 bg-gray-900/95 border border-purple-500/40 rounded-2xl px-4 py-3 shadow-2xl backdrop-blur-md">
+            <img src={friendReqBanner.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friendReqBanner.name}`}
+              alt={friendReqBanner.name} className="w-10 h-10 rounded-full border-2 border-purple-500/40" />
+            <div>
+              <p className="text-white font-bold text-sm">{friendReqBanner.name}</p>
+              <p className="text-purple-300 text-xs">أرسل لك طلب صداقة 👥</p>
+            </div>
+            <button onClick={() => {
+              signal('friend-accepted');
+              toast.success('تم قبول الطلب!');
+              setFriendReqBanner(null);
+            }} className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-colors">
+              قبول
+            </button>
+            <button onClick={() => setFriendReqBanner(null)} className="text-white/40 hover:text-white transition-colors">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Report Modal */}
