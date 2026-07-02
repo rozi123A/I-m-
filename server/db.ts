@@ -277,6 +277,7 @@ export async function getRecentUsers(limit = 20) {
         avatar: users.avatar,
         lastSignedIn: users.lastSignedIn,
         profileViews: users.profileViews,
+        country: users.country,
       })
       .from(users)
       .where(isNotNull(users.name))
