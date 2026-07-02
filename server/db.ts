@@ -164,10 +164,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
     textFields.forEach(assignNullable);
 
-    // Handle country explicitly
-    if (user.country !== undefined) {
-      values.country = user.country ?? null;
-      updateSet.country = user.country ?? null;
+    // Handle country — only set/update when we have a real value, never overwrite with null
+    if (user.country) {
+      values.country = user.country;
+      updateSet.country = user.country;
     }
 
     if (user.lastSignedIn !== undefined) {
