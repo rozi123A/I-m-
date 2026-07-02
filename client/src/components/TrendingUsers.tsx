@@ -1,6 +1,7 @@
 import { Heart, UserCheck, Loader2 } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 /** Convert ISO country code → emoji flag */
 function countryFlag(code: string | null | undefined): string {
@@ -17,6 +18,8 @@ const COUNTRY_NAMES: Record<string, string> = {
   DZ:'الجزائر', TN:'تونس', LY:'ليبيا', YE:'اليمن',
   SD:'السودان', TR:'تركيا', PK:'باكستان', IN:'الهند',
   US:'أمريكا', GB:'بريطانيا', DE:'ألمانيا', FR:'فرنسا',
+  IT:'إيطاليا', ES:'إسبانيا', NL:'هولندا', BE:'بلجيكا',
+  CA:'كندا', AU:'أستراليا', RU:'روسيا', CN:'الصين',
 };
 
 const MOCK_USERS = [
@@ -54,8 +57,9 @@ function UserCard({ user }: { user: DisplayUser }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id]);
 
-  const flag = countryFlag(user.country);
-  const countryName = user.country ? (COUNTRY_NAMES[user.country.toUpperCase()] ?? user.country) : null;
+  const code = user.country?.toUpperCase();
+  const flag = countryFlag(code);
+  const countryName = code ? (COUNTRY_NAMES[code] ?? code) : null;
 
   return (
     <div
@@ -79,16 +83,16 @@ function UserCard({ user }: { user: DisplayUser }) {
           )}
         </div>
 
-        <h3 className="font-bold text-lg text-gray-900 mb-0.5">{user.name}</h3>
+        <h3 className="font-bold text-lg text-gray-900 mb-1">{user.name}</h3>
 
-        {/* Country flag + name */}
+        {/* Real country flag + name under the username */}
         {flag && countryName ? (
-          <div className="flex items-center justify-center gap-1.5 mb-1">
-            <span className="text-xl leading-none">{flag}</span>
-            <span className="text-sm text-gray-500 font-medium">{countryName}</span>
+          <div className="flex items-center justify-center gap-1.5 mb-2 bg-gray-50 rounded-full px-3 py-0.5">
+            <span className="text-lg leading-none">{flag}</span>
+            <span className="text-sm text-gray-600 font-medium">{countryName}</span>
           </div>
         ) : (
-          <div className="h-6 mb-1" />
+          <div className="mb-2 h-6" />
         )}
 
         {user.age > 0 && (
@@ -118,9 +122,30 @@ function UserCard({ user }: { user: DisplayUser }) {
 }
 
 export default function TrendingUsers() {
+  const { user: currentUser } = useAuth();
+  const utils = trpc.useUtils();
+
   const { data: realUsers, isLoading } = trpc.users.getRecent.useQuery(20, {
     staleTime: 30_000,
   });
+
+  // Auto-detect and save country for the current logged-in user once per session
+  const updateCountry = trpc.auth.updateCountry.useMutation({
+    onSuccess: (data) => {
+      if (data.country) {
+        // Refresh the user list so the flag shows immediately
+        void utils.users.getRecent.invalidate();
+      }
+    },
+  });
+
+  const hasTriedRef = useRef(false);
+  useEffect(() => {
+    if (!currentUser || hasTriedRef.current) return;
+    hasTriedRef.current = true;
+    updateCountry.mutate();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
 
   const hasRealUsers = realUsers && realUsers.length > 0;
 
