@@ -12,6 +12,36 @@ import { sdk } from "./_core/sdk";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
+/** Detect country from request IP — tries CF headers first, then ip-api.com */
+async function detectCountry(req: import('express').Request): Promise<string | null> {
+  try {
+    const cf = req.headers['cf-ipcountry'] as string | undefined;
+    if (cf && cf.length === 2 && cf !== 'XX') return cf.toUpperCase();
+
+    const ip = (
+      (req.headers['cf-connecting-ip'] as string) ||
+      (req.headers['x-real-ip'] as string) ||
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      (req.socket.remoteAddress || '').replace('::ffff:', '')
+    )?.trim();
+
+    if (!ip || ip === '127.0.0.1' || ip === '::1') return null;
+
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    try {
+      const r = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode,status`, { signal: ctrl.signal });
+      if (r.ok) {
+        const d = await r.json() as { countryCode?: string; status?: string };
+        if (d.status === 'success' && d.countryCode?.length === 2) {
+          return d.countryCode.toUpperCase();
+        }
+      }
+    } finally { clearTimeout(t); }
+  } catch { /* best-effort */ }
+  return null;
+}
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -25,37 +55,7 @@ export const appRouter = router({
 
     /** Detect and save country for the current logged-in user from their IP */
     updateCountry: protectedProcedure.mutation(async ({ ctx }) => {
-      let country: string | null = null;
-      try {
-        // 1) Cloudflare header
-        const cf = ctx.req.headers['cf-ipcountry'] as string | undefined;
-        if (cf && cf.length === 2 && cf !== 'XX') country = cf.toUpperCase();
-
-        // 2) Multiple IP headers fallback
-        if (!country) {
-          const ip = (
-            (ctx.req.headers['cf-connecting-ip'] as string) ||
-            (ctx.req.headers['x-real-ip'] as string) ||
-            (ctx.req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-            (ctx.req.socket.remoteAddress || '').replace('::ffff:', '')
-          )?.trim();
-
-          if (ip && ip !== '127.0.0.1' && ip !== '::1') {
-            const ctrl = new AbortController();
-            const t = setTimeout(() => ctrl.abort(), 5000);
-            try {
-              const r = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode,status`, { signal: ctrl.signal });
-              if (r.ok) {
-                const d = await r.json() as { countryCode?: string; status?: string };
-                if (d.status === 'success' && d.countryCode?.length === 2) {
-                  country = d.countryCode.toUpperCase();
-                }
-              }
-            } finally { clearTimeout(t); }
-          }
-        }
-      } catch { /* best-effort */ }
-
+      const country = await detectCountry(ctx.req);
       if (country && ctx.user) {
         await upsertUser({ openId: ctx.user.openId, country });
       }
@@ -75,8 +75,11 @@ export const appRouter = router({
         const guestOpenId = `guest_${nanoid()}`;
         const avatarUrl = input.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(input.name)}`;
 
+        // Detect country at registration time so flag shows immediately
+        const country = await detectCountry(ctx.req);
+
         try {
-          await upsertUser({ openId: guestOpenId, name: input.name, loginMethod: 'guest', lastSignedIn: new Date() });
+          await upsertUser({ openId: guestOpenId, name: input.name, loginMethod: 'guest', lastSignedIn: new Date(), ...(country ? { country } : {}) });
           const user = await getUserByOpenId(guestOpenId);
           if (user) {
             await saveUserProfile(user.id, { name: input.name, age: input.age, gender: input.gender, avatar: avatarUrl });
