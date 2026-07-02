@@ -17,7 +17,7 @@ export function useAuth(options?: UseAuthOptions) {
     refetchOnWindowFocus: false,
   });
 
-  // Auto-detect and save country once per session for every authenticated user
+  // Auto-detect and save country once per session — uses browser language first
   const updateCountry = trpc.auth.updateCountry.useMutation();
   useEffect(() => {
     const user = meQuery.data;
@@ -25,7 +25,16 @@ export function useAuth(options?: UseAuthOptions) {
     const key = `country_detected_${(user as { id?: number }).id ?? 'u'}`;
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, '1');
-    updateCountry.mutate();
+    // Detect from navigator.language: "ar-SA"→"SA", "ar-DZ"→"DZ", "en-US"→"US"
+    let browserCountry: string | undefined;
+    try {
+      const lang = navigator.language || '';
+      if (lang.includes('-')) {
+        const code = lang.split('-').pop()?.toUpperCase();
+        if (code && code.length === 2 && /^[A-Z]{2}$/.test(code)) browserCountry = code;
+      }
+    } catch { /* ignore */ }
+    updateCountry.mutate(browserCountry ? { country: browserCountry } : undefined);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meQuery.data]);
 
