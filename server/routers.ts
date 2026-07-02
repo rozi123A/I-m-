@@ -22,6 +22,45 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+
+    /** Detect and save country for the current logged-in user from their IP */
+    updateCountry: protectedProcedure.mutation(async ({ ctx }) => {
+      let country: string | null = null;
+      try {
+        // 1) Cloudflare header
+        const cf = ctx.req.headers['cf-ipcountry'] as string | undefined;
+        if (cf && cf.length === 2 && cf !== 'XX') country = cf.toUpperCase();
+
+        // 2) Multiple IP headers fallback
+        if (!country) {
+          const ip = (
+            (ctx.req.headers['cf-connecting-ip'] as string) ||
+            (ctx.req.headers['x-real-ip'] as string) ||
+            (ctx.req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+            (ctx.req.socket.remoteAddress || '').replace('::ffff:', '')
+          )?.trim();
+
+          if (ip && ip !== '127.0.0.1' && ip !== '::1') {
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 5000);
+            try {
+              const r = await fetch(`http://ip-api.com/json/${ip}?fields=countryCode,status`, { signal: ctrl.signal });
+              if (r.ok) {
+                const d = await r.json() as { countryCode?: string; status?: string };
+                if (d.status === 'success' && d.countryCode?.length === 2) {
+                  country = d.countryCode.toUpperCase();
+                }
+              }
+            } finally { clearTimeout(t); }
+          }
+        }
+      } catch { /* best-effort */ }
+
+      if (country && ctx.user) {
+        await upsertUser({ openId: ctx.user.openId, country });
+      }
+      return { country };
+    }),
   }),
 
   users: router({
