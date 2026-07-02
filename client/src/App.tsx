@@ -9,7 +9,7 @@ import Login from "./pages/Login";
 import ChatRoom from "./pages/ChatRoom";
 import Profile from "./pages/Profile";
 import Store from "./pages/Store";
-import Admin from "./pages/Admin";
+import Admin from "@/pages/Admin";
 
 function Router() {
   return (
