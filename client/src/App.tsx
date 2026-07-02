@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import ChatRoom from "./pages/ChatRoom";
 import Profile from "./pages/Profile";
 import Store from "./pages/Store";
+import Admin from "./pages/Admin";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path={"/chat"} component={ChatRoom} />
       <Route path={"/profile"} component={Profile} />
       <Route path={"/store"} component={Store} />
+      <Route path={"/admin"} component={Admin} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
