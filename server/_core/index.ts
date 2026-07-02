@@ -20,6 +20,7 @@ interface PeerInfo {
   filterGender: string;
   filterCountry: string;
   partnerId: string | null;
+  userId?: number;
 }
 
 const peers = new Map<string, PeerInfo>();
@@ -63,8 +64,8 @@ function matchPeers() {
 
       p1.partnerId = id2;
       p2.partnerId = id1;
-      sseEvent(p1.res, { type: "matched", role: "caller", peer: { name: p2.name, avatar: p2.avatar } });
-      sseEvent(p2.res, { type: "matched", role: "callee", peer: { name: p1.name, avatar: p1.avatar } });
+      sseEvent(p1.res, { type: "matched", role: "caller", peer: { name: p2.name, avatar: p2.avatar, userId: p2.userId } });
+      sseEvent(p2.res, { type: "matched", role: "callee", peer: { name: p1.name, avatar: p1.avatar, userId: p1.userId } });
       matchPeers();
       return;
     }
@@ -101,6 +102,7 @@ function registerSignalingRoutes(app: express.Express) {
     const gender        = (req.query.gender        as string) || "other";
     const filterGender  = (req.query.filterGender  as string) || "any";
     const filterCountry = (req.query.filterCountry as string) || "any";
+    const userId        = req.query.userId ? parseInt(req.query.userId as string) : undefined;
 
     if (!peerId) { res.status(400).json({ error: "peerId required" }); return; }
 
@@ -112,7 +114,7 @@ function registerSignalingRoutes(app: express.Express) {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 
-    peers.set(peerId, { res, name, avatar, gender, filterGender, filterCountry, partnerId: null });
+    peers.set(peerId, { res, name, avatar, gender, filterGender, filterCountry, userId, partnerId: null });
     waitingQueue.push(peerId);
     sseEvent(res, { type: "waiting" });
     matchPeers();
@@ -170,19 +172,37 @@ function registerSignalingRoutes(app: express.Express) {
       sseEvent(partner.res, { type: "text-message", text, senderName: peer.name });
     } else if (type === "gift") {
       sseEvent(partner.res, { type: "gift", data: { ...(data as object), senderName: peer.name } });
-    } else if (type === "friend-request") {
+    } else     if (type === "friend-request") {
       sseEvent(partner.res, {
         type: "friend-request",
         fromName: peer.name,
         fromAvatar: peer.avatar,
         fromPeerId: peerId,
       });
+      // Also send to persistent notification system if users are logged in
+      if (peer.userId && partner.userId) {
+        sendUserNotification(partner.userId, {
+          type: "friend-request",
+          fromName: peer.name,
+          fromAvatar: peer.avatar,
+          ts: Date.now(),
+        });
+      }
     } else if (type === "friend-accepted") {
       sseEvent(partner.res, {
         type: "friend-accepted",
         fromName: peer.name,
         fromAvatar: peer.avatar,
       });
+      // Also send to persistent notification system if users are logged in
+      if (peer.userId && partner.userId) {
+        sendUserNotification(partner.userId, {
+          type: "friend-accepted",
+          fromName: peer.name,
+          fromAvatar: peer.avatar,
+          ts: Date.now(),
+        });
+      }
     } else {
       sseEvent(partner.res, { type, data });
     }

@@ -67,6 +67,16 @@ export default function Store() {
       description: "تحديد من تريد مقابلته بناءً على الموقع الجغرافي والجنس.",
       icon: <ShieldCheck className="w-6 h-6 text-green-500" />,
     },
+    {
+      title: "تجربة بدون إعلانات",
+      description: "استمتع بدردشة متواصلة دون أي إعلانات منبثقة أو مزعجة.",
+      icon: <Zap className="w-6 h-6 text-red-500" />,
+    },
+    {
+      title: "أولوية المطابقة",
+      description: "احصل على أولوية في قائمة الانتظار لمقابلة أشخاص جدد بشكل أسرع.",
+      icon: <ArrowRight className="w-6 h-6 text-indigo-500" />,
+    },
   ];
 
   return (

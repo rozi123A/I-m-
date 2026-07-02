@@ -120,8 +120,20 @@ export default function ChatRoom() {
   const [showFaceFilters, setShowFaceFilters] = useState(false);
   const [showFriends, setShowFriends] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('none');
-  const [friends, setFriends] = useState<any[]>([]);
-  const [friendReqBanner, setFriendReqBanner] = useState<{name:string;avatar:string} | null>(null);
+  const { data: dbFriends, refetch: refetchFriends } = trpc.social.getFriends.useQuery(undefined, { enabled: !!user });
+  const sendFriendRequestMutation = trpc.social.sendRequest.useMutation({
+    onSuccess: () => toast.success('تم إرسال طلب الصداقة بنجاح'),
+    onError: (err) => toast.error(err.message),
+  });
+  const acceptFriendRequestMutation = trpc.social.acceptRequest.useMutation({
+    onSuccess: () => {
+      toast.success('تم قبول الصداقة!');
+      refetchFriends();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const [friendReqBanner, setFriendReqBanner] = useState<{name:string;avatar:string;fromPeerId?:string;fromUserId?:number} | null>(null);
   const [lastIncomingMsg, setLastIncomingMsg] = useState('');
   const [showReport, setShowReport] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -236,6 +248,8 @@ export default function ChatRoom() {
       case 'matched': {
         setPeerName(msg.peer?.name || 'مستخدم');
         setPeerAvatar(msg.peer?.avatar || '');
+        // Store peer userId for persistent social actions
+        (window as any).currentPeerUserId = msg.peer?.userId;
         setStatus('matched'); startTimer(); setNotif(null);
         const pc = createPC();
         if (msg.role === 'caller') {
@@ -274,17 +288,23 @@ export default function ChatRoom() {
         setNotif({ partnerName: msg.partnerName, partnerAvatar: msg.partnerAvatar });
         break;
       case 'friend-request':
-        setFriendReqBanner({ name: msg.fromName || 'مستخدم', avatar: msg.fromAvatar || '' });
+        setFriendReqBanner({ 
+          name: msg.fromName || 'مستخدم', 
+          avatar: msg.fromAvatar || '',
+          fromPeerId: msg.fromPeerId,
+          fromUserId: msg.fromUserId
+        });
         toast(`طلب صداقة من ${msg.fromName || 'مستخدم'}`, { icon: '👥' });
         playFriendSound();
         if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
           try { new Notification('طلب صداقة جديد', { body: `${msg.fromName || 'مستخدم'} يريد إضافتك كصديق`, icon: '/favicon.ico' }); } catch {}
         }
-        setTimeout(() => setFriendReqBanner(null), 6000);
+        setTimeout(() => setFriendReqBanner(null), 10000);
         break;
       case 'friend-accepted':
         toast.success(`${msg.fromName || 'مستخدم'} قبل طلب صداقتك! 🎉`);
         playFriendSound();
+        refetchFriends();
         if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
           try { new Notification('تم قبول طلب الصداقة', { body: `${msg.fromName || 'مستخدم'} قبل طلب صداقتك`, icon: '/favicon.ico' }); } catch {}
         }
@@ -323,6 +343,7 @@ export default function ChatRoom() {
       gender: myGender,
       filterGender: fg,
       filterCountry: fc,
+      userId: (user as any)?.id || '',
     });
     // Request browser notification permission
     if ('Notification' in window && Notification.permission === 'default') {
@@ -999,7 +1020,7 @@ export default function ChatRoom() {
 
       {showFriends && (
         <FriendsPanel
-          friends={friends}
+          friends={dbFriends || []}
           onClose={() => setShowFriends(false)}
           onStartChat={(friendId) => { toast.success('جاري بدء الدردشة...'); setShowFriends(false); }}
           currentPeerName={peerName}
@@ -1007,7 +1028,15 @@ export default function ChatRoom() {
           currentPeerId={status === 'matched' ? 'peer_current' : undefined}
           myPeerId={myId}
           onSendFriendRequest={() => {
-            signal('friend-request', { senderName: myName, senderAvatar: myAvatar });
+            const peerUserId = (window as any).currentPeerUserId;
+            signal('friend-request', { 
+              senderName: myName, 
+              senderAvatar: myAvatar,
+              fromUserId: (user as any)?.id
+            });
+            if (peerUserId) {
+              sendFriendRequestMutation.mutate({ receiverId: peerUserId });
+            }
           }}
         />
       )}
@@ -1024,6 +1053,9 @@ export default function ChatRoom() {
             </div>
             <button onClick={() => {
               signal('friend-accepted');
+              if (friendReqBanner.fromUserId) {
+                acceptFriendRequestMutation.mutate({ senderId: friendReqBanner.fromUserId });
+              }
               toast.success('تم قبول الطلب!');
               setFriendReqBanner(null);
             }} className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-colors">

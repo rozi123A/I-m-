@@ -78,3 +78,37 @@ export const gifts = pgTable("gifts", {
 
 export type Gift = typeof gifts.$inferSelect;
 export type InsertGift = typeof gifts.$inferInsert;
+
+/**
+ * Social system: friends and requests
+ */
+export const friendRequests = pgTable("friend_requests", {
+  id: serial("id").primaryKey(),
+  senderId: integer("senderId").notNull(),
+  receiverId: integer("receiverId").notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending, accepted, rejected
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const friends = pgTable("friends", {
+  id: serial("id").primaryKey(),
+  userId1: integer("userId1").notNull(),
+  userId2: integer("userId2").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/**
+ * Persistent notification system
+ */
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // friend-request, friend-accepted, new-message, system
+  title: text("title"),
+  message: text("message"),
+  fromName: text("fromName"),
+  fromAvatar: text("fromAvatar"),
+  isRead: boolean("isRead").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

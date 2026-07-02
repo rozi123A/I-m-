@@ -2,6 +2,7 @@ import { Bell, X, MessageCircle, UserPlus, Check, Heart } from 'lucide-react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { playFriendSound, playMessageSound } from '@/lib/notificationSound';
+import { trpc } from '@/lib/trpc';
 
 interface AppNotif {
   id: string;
@@ -67,6 +68,28 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const esRef = useRef<EventSource | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const { data: dbNotifs, refetch: refetchNotifs } = trpc.notifications.get.useQuery(undefined, {
+    enabled: isAuthenticated && !!userId,
+    onSuccess: (data) => {
+      // Merge DB notifications with local storage if needed, or just use DB
+      const formatted = data.map(n => ({
+        id: n.id.toString(),
+        type: n.type,
+        title: n.title || undefined,
+        message: n.message || undefined,
+        fromName: n.fromName || undefined,
+        fromAvatar: n.fromAvatar || undefined,
+        ts: n.createdAt.getTime(),
+        read: n.isRead
+      }));
+      setNotifs(formatted);
+    }
+  });
+
+  const markReadMutation = trpc.notifications.markAsRead.useMutation({
+    onSuccess: () => refetchNotifs()
+  });
 
   const addNotif = useCallback((raw: Omit<AppNotif, 'id' | 'read'>) => {
     const notif: AppNotif = { ...raw, id: `${raw.ts}-${Math.random()}`, read: false };
@@ -139,6 +162,7 @@ export default function NotificationBell() {
   const unread = notifs.filter(n => !n.read).length;
 
   const markAllRead = () => {
+    markReadMutation.mutate();
     setNotifs(prev => {
       const next = prev.map(n => ({ ...n, read: true }));
       saveStored(next);

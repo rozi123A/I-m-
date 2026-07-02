@@ -7,6 +7,8 @@ import {
   upsertUser, getUserByOpenId, getRecentUsers, incrementProfileViews,
   getUserCredits, deductCredits, addCredits, saveGift, upgradeToPremium,
   getCountryStats, getNewRegistrations,
+  createFriendRequest, acceptFriendRequest, getFriends,
+  createNotification, getNotifications, markNotificationsAsRead,
 } from "./db";
 import { sdk } from "./_core/sdk";
 import { detectCountry } from "./_core/detectCountry";
@@ -161,6 +163,50 @@ export const appRouter = router({
 
     countryStats: adminProcedure
       .query(async () => getCountryStats()),
+  }),
+
+  social: router({
+    sendRequest: protectedProcedure
+      .input(z.object({ receiverId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.id <= 0) throw new Error("يجب تسجيل الدخول لإضافة أصدقاء");
+        await createFriendRequest(ctx.user.id, input.receiverId);
+        await createNotification(input.receiverId, {
+          type: 'friend-request',
+          fromName: ctx.user.name || 'مستخدم',
+          fromAvatar: ctx.user.avatar || '',
+          message: 'أرسل لك طلب صداقة جديد',
+        });
+        return { success: true };
+      }),
+
+    acceptRequest: protectedProcedure
+      .input(z.object({ senderId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.id <= 0) throw new Error("يجب تسجيل الدخول لقبول الصداقة");
+        await acceptFriendRequest(input.senderId, ctx.user.id);
+        await createNotification(input.senderId, {
+          type: 'friend-accepted',
+          fromName: ctx.user.name || 'مستخدم',
+          fromAvatar: ctx.user.avatar || '',
+          message: 'قبل طلب صداقتك',
+        });
+        return { success: true };
+      }),
+
+    getFriends: protectedProcedure
+      .query(async ({ ctx }) => getFriends(ctx.user.id)),
+  }),
+
+  notifications: router({
+    get: protectedProcedure
+      .query(async ({ ctx }) => getNotifications(ctx.user.id)),
+
+    markAsRead: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await markNotificationsAsRead(ctx.user.id);
+        return { success: true };
+      }),
   }),
 });
 

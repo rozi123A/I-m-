@@ -11,6 +11,9 @@ export const GIFTS = [
   { id: 'fire',    emoji: '🔥',  name: 'نار',    cost: 25  },
   { id: 'rocket',  emoji: '🚀',  name: 'صاروخ',  cost: 40  },
   { id: 'unicorn', emoji: '🦄',  name: 'يونيكورن', cost: 75 },
+  { id: 'car',     emoji: '🏎️',  name: 'سيارة',  cost: 250 },
+  { id: 'island',  emoji: '🏝️',  name: 'جزيرة',  cost: 500 },
+  { id: 'planet',  emoji: '🪐',  name: 'كوكب',   cost: 1000 },
 ] as const;
 
 export type GiftItem = typeof GIFTS[number];

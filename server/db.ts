@@ -1,7 +1,7 @@
 import { desc, eq, isNotNull, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { InsertUser, users, InsertMessage, messages, gifts } from '../drizzle/schema';
+import { InsertUser, users, InsertMessage, messages, gifts, friendRequests, friends, notifications } from '../drizzle/schema';
 import { ENV } from './_core/env';
 
 /** Strip query params unsupported by postgres.js (e.g. channel_binding from Neon) */
@@ -113,6 +113,31 @@ export async function ensureSchema(): Promise<void> {
        "receiverId" INTEGER NOT NULL,
        "giftType"  VARCHAR(50) NOT NULL,
        cost        INTEGER NOT NULL DEFAULT 0,
+       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+     )`,
+    `CREATE TABLE IF NOT EXISTS friend_requests (
+       id          SERIAL PRIMARY KEY,
+       "senderId"  INTEGER NOT NULL,
+       "receiverId" INTEGER NOT NULL,
+       status      VARCHAR(20) NOT NULL DEFAULT 'pending',
+       "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+       "updatedAt" TIMESTAMP NOT NULL DEFAULT now()
+     )`,
+    `CREATE TABLE IF NOT EXISTS friends (
+       id          SERIAL PRIMARY KEY,
+       "userId1"   INTEGER NOT NULL,
+       "userId2"   INTEGER NOT NULL,
+       "createdAt" TIMESTAMP NOT NULL DEFAULT now()
+     )`,
+    `CREATE TABLE IF NOT EXISTS notifications (
+       id          SERIAL PRIMARY KEY,
+       "userId"    INTEGER NOT NULL,
+       type        VARCHAR(50) NOT NULL,
+       title       TEXT,
+       message     TEXT,
+       "fromName"  TEXT,
+       "fromAvatar" TEXT,
+       "isRead"    BOOLEAN NOT NULL DEFAULT false,
        "createdAt" TIMESTAMP NOT NULL DEFAULT now()
      )`,
   ];
@@ -433,5 +458,85 @@ export async function upgradeToPremium(userId: number): Promise<void> {
   } catch (err) {
     console.error('[Database] upgradeToPremium failed:', err);
     throw err;
+  }
+}
+
+// ── Social System Functions ──────────────────────────────────────────────────
+
+export async function createFriendRequest(senderId: number, receiverId: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.insert(friendRequests).values({ senderId, receiverId, status: 'pending' });
+  } catch (err) {
+    console.error('[Database] createFriendRequest failed:', err);
+  }
+}
+
+export async function acceptFriendRequest(senderId: number, receiverId: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.transaction(async (tx) => {
+      await tx.update(friendRequests)
+        .set({ status: 'accepted', updatedAt: new Date() })
+        .where(sql`"senderId" = ${senderId} AND "receiverId" = ${receiverId}`);
+      await tx.insert(friends).values({ userId1: senderId, userId2: receiverId });
+    });
+  } catch (err) {
+    console.error('[Database] acceptFriendRequest failed:', err);
+  }
+}
+
+export async function getFriends(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const userFriends = await db.select().from(friends).where(or(eq(friends.userId1, userId), eq(friends.userId2, userId)));
+    const friendIds = userFriends.map(f => f.userId1 === userId ? f.userId2 : f.userId1);
+    if (friendIds.length === 0) return [];
+    return await db.select().from(users).where(sql`id IN (${sql.join(friendIds, sql`, `)})`);
+  } catch (err) {
+    console.error('[Database] getFriends failed:', err);
+    return [];
+  }
+}
+
+// ── Notification System Functions ────────────────────────────────────────────
+
+export async function createNotification(userId: number, data: {
+  type: string;
+  title?: string;
+  message?: string;
+  fromName?: string;
+  fromAvatar?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.insert(notifications).values({ userId, ...data, isRead: false });
+  } catch (err) {
+    console.error('[Database] createNotification failed:', err);
+  }
+}
+
+export async function getNotifications(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+  } catch (err) {
+    console.error('[Database] getNotifications failed:', err);
+    return [];
+  }
+}
+
+export async function markNotificationsAsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(notifications).set({ isRead: true }).where(eq(notifications.userId, userId));
+  } catch (err) {
+    console.error('[Database] markNotificationsAsRead failed:', err);
   }
 }
