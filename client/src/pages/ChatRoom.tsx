@@ -376,7 +376,7 @@ export default function ChatRoom() {
           setLocation('/store');
           return;
         }
-        toast.success("تم تفعيل رادار النجوم! سيتم خصم 5 نجوم عند بدء المكالمة.");
+        toast.info("تم تفعيل رادار النجوم! سيتم خصم 5 نجوم عند بدء المكالمة.");
       }
     }
     destroyedRef.current = false;
@@ -525,10 +525,12 @@ export default function ChatRoom() {
     // Star Radar Deduction on Accept
     if ((filterGender !== 'any' || filterCountry !== 'any') && !(user as any)?.isPremium) {
       try {
+        console.log("[StarRadar] Attempting to deduct 5 stars...");
         await deductRadarStars.mutateAsync({ amount: 5 });
-        toast.success("تم خصم 5 نجوم لاستخدام الرادار");
+        toast.success("تم خصم 5 نجوم لاستخدام الرادار 🌟");
         walletQuery.refetch();
       } catch (err: any) {
+        console.error("[StarRadar] Deduction failed:", err);
         toast.error(err.message || "رصيد نجوم غير كافٍ");
         handleRejectMatch();
         return;
@@ -1153,7 +1155,7 @@ export default function ChatRoom() {
                     ? <Square className="w-4 h-4 fill-white text-white" />
                     : <Play   className="w-4 h-4 fill-white text-white" />
                   }
-                  {isSearching ? 'إيقاف البحث' : (filterCountry !== 'any' || filterGender !== 'any' ? 'رادار النجوم' : 'ابدأ مباشرة')}
+                  {isSearching ? 'إيقاف البحث' : 'ابدأ مباشرة'}
                 </button>
               );
             })()}
