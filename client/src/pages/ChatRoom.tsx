@@ -127,6 +127,7 @@ export default function ChatRoom() {
   const [showFriends, setShowFriends] = useState(false);
   const [dmTarget, setDmTarget] = useState<{ id: number; name: string; avatar: string } | null>(null);
   const [selectedFilter, setSelectedFilter] = useState('none');
+  const [showDailyBonus, setShowDailyBonus] = useState(false);
   const { data: dbFriends, refetch: refetchFriends } = trpc.social.getFriends.useQuery(undefined, { enabled: !!user });
   const { data: unreadDmData, refetch: refetchUnread } = trpc.messages.getUnreadCount.useQuery(undefined, {
     enabled: !!user,
@@ -194,6 +195,36 @@ export default function ChatRoom() {
     },
     onError: (err) => toast.error(err.message)
   });
+
+  const claimBonus = trpc.users.claimDailyBonus.useMutation({
+    onSuccess: (data) => {
+      toast.success(`مبروك! حصلت على ${data.starsGained} نجوم و ${data.creditsGained} نقاط 🎁`);
+      setShowDailyBonus(false);
+      walletQuery.refetch();
+      balanceQuery.refetch();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      setShowDailyBonus(false);
+    }
+  });
+
+  const { data: notifications } = trpc.notifications.get.useQuery(undefined, { 
+    enabled: !!user,
+    refetchInterval: 10000 
+  });
+
+  useEffect(() => {
+    if (notifications) {
+      const alreadyClaimed = notifications.some(n => 
+        n.type === 'system' && 
+        n.title === 'مكافأة يومية 🎁' && 
+        new Date(n.createdAt).toDateString() === new Date().toDateString()
+      );
+      setShowDailyBonus(!alreadyClaimed);
+    }
+  }, [notifications]);
+
   useEffect(() => { if (balanceQuery.data) setCredits(balanceQuery.data.credits); }, [balanceQuery.data]);
 
   // Auto-fill country for premium users from their saved profile
