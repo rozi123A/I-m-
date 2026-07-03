@@ -375,11 +375,39 @@ export async function getMessages(userId1: number, userId2: number) {
 
   try {
     return await db.select().from(messages).where(
-      or(eq(messages.senderId, userId1), eq(messages.receiverId, userId1))
-    );
+      or(
+        and(eq(messages.senderId, userId1), eq(messages.receiverId, userId2)),
+        and(eq(messages.senderId, userId2), eq(messages.receiverId, userId1))
+      )
+    ).orderBy(messages.createdAt);
   } catch (error) {
     console.error('[Database] Failed to get messages:', error);
     return [];
+  }
+}
+
+export async function getUnreadMessageCount(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  try {
+    const result = await db.select({ count: sql<number>`count(*)::int` })
+      .from(messages)
+      .where(and(eq(messages.receiverId, userId), eq(messages.isRead, false)));
+    return result[0]?.count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function markMessagesRead(userId: number, senderId: number) {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(messages)
+      .set({ isRead: true })
+      .where(and(eq(messages.receiverId, userId), eq(messages.senderId, senderId)));
+  } catch (err) {
+    console.error('[Database] markMessagesRead failed:', err);
   }
 }
 

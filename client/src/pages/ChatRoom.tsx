@@ -128,6 +128,11 @@ export default function ChatRoom() {
   const [dmTarget, setDmTarget] = useState<{ id: number; name: string; avatar: string } | null>(null);
   const [selectedFilter, setSelectedFilter] = useState('none');
   const { data: dbFriends, refetch: refetchFriends } = trpc.social.getFriends.useQuery(undefined, { enabled: !!user });
+  const { data: unreadDmData, refetch: refetchUnread } = trpc.messages.getUnreadCount.useQuery(undefined, {
+    enabled: !!user,
+    refetchInterval: 8000,
+  });
+  const unreadDmCount = unreadDmData?.count ?? 0;
   const sendFriendRequestMutation = trpc.social.sendRequest.useMutation({
     onSuccess: () => toast.success('تم إرسال طلب الصداقة بنجاح'),
     onError: (err) => toast.error(err.message),
@@ -139,6 +144,20 @@ export default function ChatRoom() {
     },
     onError: (err) => toast.error(err.message),
   });
+
+  // ── DM notification: toast when unread count rises while panel is closed ─────
+  const prevUnreadRef = useRef(0);
+  useEffect(() => {
+    if (unreadDmCount > prevUnreadRef.current && !dmTarget) {
+      const diff = unreadDmCount - prevUnreadRef.current;
+      playMessageSound();
+      toast(`لديك ${diff} رسالة خاصة جديدة 💬`, {
+        description: 'افتح قائمة الأصدقاء للرد',
+        duration: 5000,
+      });
+    }
+    prevUnreadRef.current = unreadDmCount;
+  }, [unreadDmCount, dmTarget]);
 
   const [friendReqBanner, setFriendReqBanner] = useState<{name:string;avatar:string;fromPeerId?:string;fromUserId?:number} | null>(null);
   const [lastIncomingMsg, setLastIncomingMsg] = useState('');
@@ -1041,11 +1060,16 @@ export default function ChatRoom() {
 
           {/* Friends */}
           <button
-            onClick={() => setShowFriends(v => !v)}
-            className="flex flex-col items-center gap-1.5 py-4 px-2 text-red-300 transition-all active:scale-95"
+            onClick={() => { setShowFriends(v => !v); refetchUnread(); }}
+            className="relative flex flex-col items-center gap-1.5 py-4 px-2 text-red-300 transition-all active:scale-95"
           >
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600 shadow-lg shadow-red-900/50">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600 shadow-lg shadow-red-900/50 relative">
               <Heart className="w-5 h-5 text-white" />
+              {unreadDmCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-gray-900 text-[9px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-black border-2 border-gray-900 px-0.5">
+                  {unreadDmCount > 99 ? '99+' : unreadDmCount}
+                </span>
+              )}
             </div>
             <span className="text-[11px] font-bold">أصدقاء</span>
           </button>

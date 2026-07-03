@@ -22,6 +22,8 @@ export default function DirectMessagePanel({ friendId, friendName, friendAvatar,
     refetchInterval: 3000,
   });
 
+  const markReadMutation = trpc.messages.markRead.useMutation();
+
   const sendMutation = trpc.messages.save.useMutation({
     onSuccess: () => {
       setText('');
@@ -29,15 +31,24 @@ export default function DirectMessagePanel({ friendId, friendName, friendAvatar,
     },
   });
 
+  // Mark messages from this friend as read when panel opens
+  useEffect(() => {
+    markReadMutation.mutate({ senderId: friendId });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [friendId]);
+
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
     if (messages && messages.length > lastCountRef.current) {
       const last = messages[messages.length - 1];
       if (last && last.senderId !== myId && lastCountRef.current !== 0) {
         playMessageSound();
+        // Mark as read since panel is open
+        markReadMutation.mutate({ senderId: friendId });
       }
       lastCountRef.current = messages.length;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, myId]);
 
   const handleSend = () => {

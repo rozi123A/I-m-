@@ -9,6 +9,7 @@ import {
   getCountryStats, getNewRegistrations,
   createFriendRequest, acceptFriendRequest, getFriends, getIncomingFriendRequests,
   createNotification, getNotifications, markNotificationsAsRead,
+  getUnreadMessageCount, markMessagesRead,
 } from "./db";
 import { sdk } from "./_core/sdk";
 import { detectCountry } from "./_core/detectCountry";
@@ -114,6 +115,19 @@ export const appRouter = router({
     getMessages: protectedProcedure
       .input(z.number())
       .query(async ({ ctx, input }) => getMessages(ctx.user.id, input)),
+
+    getUnreadCount: protectedProcedure
+      .query(async ({ ctx }) => {
+        const count = await getUnreadMessageCount(ctx.user.id);
+        return { count };
+      }),
+
+    markRead: protectedProcedure
+      .input(z.object({ senderId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await markMessagesRead(ctx.user.id, input.senderId);
+        return { success: true };
+      }),
   }),
 
   gifts: router({
