@@ -430,7 +430,21 @@ export async function deductCredits(userId: number, amount: number): Promise<boo
   try {
     const current = await getUserCredits(userId);
     if (current < amount) return false;
-    await db.update(users).set({ credits: current - amount }).where(eq(users.id, userId));
+    await db.update(users).set({ credits: sql`${users.credits} - ${amount}` }).where(eq(users.id, userId));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function deductStars(userId: number, amount: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  try {
+    const result = await db.select({ wallet: users.wallet }).from(users).where(eq(users.id, userId)).limit(1);
+    const current = result[0]?.wallet ?? 0;
+    if (current < amount) return false;
+    await db.update(users).set({ wallet: sql`${users.wallet} - ${amount}` }).where(eq(users.id, userId));
     return true;
   } catch {
     return false;

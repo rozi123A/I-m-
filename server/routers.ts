@@ -213,6 +213,16 @@ export const appRouter = router({
         await upgradeToPremium(ctx.user.id);
         return { success: true };
       }),
+
+    /** Deduct stars for using Star Radar (paid filter) */
+    deductRadarStars: protectedProcedure
+      .input(z.object({ amount: z.number().min(1).max(50) }))
+      .mutation(async ({ ctx, input }) => {
+        const { deductStars } = await import("./db");
+        const success = await deductStars(ctx.user.id, input.amount);
+        if (!success) throw new Error("رصيد نجوم غير كافٍ لاستخدام الرادار");
+        return { success: true };
+      }),
   }),
 
   admin: router({

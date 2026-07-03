@@ -363,14 +363,25 @@ export default function ChatRoom() {
     }
   }, [createPC, signal, addMessage, startTimer, stopTimer, closePC, resetRemote, showGiftAnim, peerName]);
 
+  const deductRadarStars = trpc.gifts.deductRadarStars.useMutation();
+
   // ── start session (called after filter screen) ────────────────────────────
   const startSession = useCallback(async (fg: string, fc: string) => {
+    // Star Radar logic: Paid filters
     if (fg !== 'any' || fc !== 'any') {
       if (!(user as any)?.isPremium) {
-        toast.error("فلتر الجنس والدولة ميزة Premium فقط.");
-        sessionStorage.setItem('chat_auto_start', 'true');
-        setLocation('/store?from=chat');
-        return;
+        const cost = 5; // Cost in stars
+        const confirmRadar = window.confirm(`استخدام رادار النجوم للفلترة يكلف ${cost} نجوم لكل بحث. هل تريد المتابعة؟`);
+        if (!confirmRadar) return;
+        
+        try {
+          await deductRadarStars.mutateAsync({ amount: cost });
+          toast.success("تم تفعيل رادار النجوم! جاري البحث...");
+          walletQuery.refetch();
+        } catch (err: any) {
+          toast.error(err.message || "فشل خصم النجوم");
+          return;
+        }
       }
     }
     destroyedRef.current = false;
@@ -571,9 +582,16 @@ export default function ChatRoom() {
           {/* Filter Card */}
           <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 shadow-2xl space-y-6">
 
-            {/* Gender filter */}
+            {/* Gender filter — Star Radar */}
             <div>
-              <label className="block text-white font-semibold mb-3 text-sm">الجنس المطلوب</label>
+              <label className="block text-white font-semibold mb-3 text-sm flex items-center gap-2">
+                الجنس المطلوب
+                {!(user as any)?.isPremium && filterGender !== 'any' && (
+                  <span className="text-[10px] bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                    <Zap className="w-2.5 h-2.5" /> 5 نجوم
+                  </span>
+                )}
+              </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { val: 'any',    label: 'الكل',  Icon: Users },
@@ -596,7 +614,7 @@ export default function ChatRoom() {
               </div>
             </div>
 
-            {/* Country filter — Premium */}
+            {/* Country filter — Star Radar */}
             <div>
               <label className="block text-white font-semibold mb-3 text-sm flex items-center gap-2">
                 الدولة
@@ -606,55 +624,36 @@ export default function ChatRoom() {
                   </span>
                 ) : (
                   <span className="text-[10px] bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5" /> Premium
+                    <Zap className="w-2.5 h-2.5" /> Star Radar
                   </span>
                 )}
               </label>
 
-              {(user as any)?.isPremium ? (
-                <>
-                  <select
-                    value={filterCountry}
-                    onChange={e => setFilterCountry(e.target.value)}
-                    className="w-full bg-white/10 border border-white/20 text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 text-sm"
-                  >
-                    {COUNTRIES.map(c => {
-                      const stat = countryStats?.find(s => s.country === c.code);
-                      const label = stat ? `${c.name} — ${stat.count} مستخدم` : c.name;
-                      return (
-                        <option key={c.code} value={c.code} className="bg-gray-900 text-white">
-                          {label}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  {myCountry && filterCountry === myCountry && (
-                    <p className="text-green-400 text-[11px] mt-1.5 flex items-center gap-1">
-                      ✓ تم اختيار بلدك تلقائياً — يمكنك تغييره
-                    </p>
-                  )}
-                  {filterCountry === 'any' && (
-                    <p className="text-white/40 text-[11px] mt-1.5">
-                      ستتصل بأشخاص من جميع الدول
-                    </p>
-                  )}
-                </>
-              ) : (
-                <button
-                  onClick={() => { sessionStorage.setItem('chat_auto_start', 'true'); setLocation('/store?from=chat'); }}
-                  className="w-full bg-yellow-500/10 border border-yellow-500/30 rounded-2xl px-4 py-4 flex items-center justify-between group hover:bg-yellow-500/20 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Lock className="w-5 h-5 text-yellow-400" />
-                    <div className="text-right">
-                      <p className="text-yellow-300 text-sm font-bold">فلترة بالدولة</p>
-                      <p className="text-yellow-300/60 text-[11px]">اشترك لتختار بلداً معيناً</p>
-                    </div>
-                  </div>
-                  <span className="text-yellow-400 text-xs font-bold bg-yellow-500/20 px-3 py-1 rounded-full group-hover:bg-yellow-500/30">
-                    اشترك الآن
-                  </span>
-                </button>
+              <select
+                value={filterCountry}
+                onChange={e => setFilterCountry(e.target.value)}
+                className="w-full bg-white/10 border border-white/20 text-white rounded-2xl px-4 py-3 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/30 text-sm"
+              >
+                {COUNTRIES.map(c => {
+                  const stat = countryStats?.find(s => s.country === c.code);
+                  const label = stat ? `${c.name} — ${stat.count} مستخدم` : c.name;
+                  return (
+                    <option key={c.code} value={c.code} className="bg-gray-900 text-white">
+                      {label}
+                    </option>
+                  );
+                })}
+              </select>
+              
+              {!(user as any)?.isPremium && filterCountry !== 'any' && (
+                <p className="text-yellow-400 text-[11px] mt-1.5 flex items-center gap-1">
+                  <Zap className="w-3 h-3" /> استخدام الرادار سيكلفك 5 نجوم
+                </p>
+              )}
+              {myCountry && filterCountry === myCountry && (
+                <p className="text-green-400 text-[11px] mt-1.5 flex items-center gap-1">
+                  ✓ تم اختيار بلدك تلقائياً
+                </p>
               )}
             </div>
 
@@ -680,18 +679,11 @@ export default function ChatRoom() {
 
             {/* Start button */}
             <button
-              onClick={() => {
-                if ((filterGender !== 'any' || filterCountry !== 'any') && !(user as any)?.isPremium) {
-                  alert("فلاتر البحث متاحة فقط لمشتركي Premium. يرجى الاشتراك أو اختيار 'الكل'.");
-                  setLocation('/store');
-                  return;
-                }
-                startSession(filterGender, filterCountry);
-              }}
+              onClick={() => startSession(filterGender, filterCountry)}
               className="w-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 hover:from-purple-700 hover:via-fuchsia-700 hover:to-pink-600 text-white font-bold py-4 rounded-2xl shadow-2xl shadow-purple-900/50 transform hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center gap-3 text-lg tracking-wide"
             >
               <Video className="w-5 h-5" />
-              ابدأ البحث الآن
+              {filterCountry === 'any' && filterGender === 'any' ? 'ابدأ البحث الآن' : 'تفعيل رادار النجوم 🚀'}
             </button>
 
             <button
