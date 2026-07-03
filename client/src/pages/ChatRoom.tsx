@@ -831,7 +831,13 @@ export default function ChatRoom() {
               onClick={() => {
                 const stars = walletQuery.data?.wallet || 0;
                 if (stars < 10) {
-                  toast.info("تحتاج إلى 10 نجوم على الأقل للتحويل");
+                  toast("محفظة النجوم 🌟", {
+                    description: `رصيدك الحالي ${stars} نجوم. اشحن النجوم لاستخدام الرادار أو أرسل هدايا مميزة.`,
+                    action: {
+                      label: "شحن",
+                      onClick: () => setLocation('/store')
+                    }
+                  });
                   return;
                 }
                 if (confirm(`هل تريد تحويل ${stars} نجوم إلى ${Math.floor(stars/2)} نقاط؟`)) {
@@ -1119,7 +1125,13 @@ export default function ChatRoom() {
                   onClick={() => {
                     if (isMatched)        { handleNext(); }
                     else if (isSearching) { stopSession(); }
-                    else                  { startSession('any', 'any'); }
+                    else                  { 
+                      if (filterCountry !== 'any' || filterGender !== 'any') {
+                        startSession(filterGender, filterCountry);
+                      } else {
+                        startSession('any', 'any');
+                      }
+                    }
                   }}
                   className={`flex items-center justify-center gap-2.5 py-3.5 rounded-[18px] font-bold text-[13px] tracking-wide transition-all duration-200 active:scale-95 shadow-lg ${
                     isSearching
@@ -1131,26 +1143,18 @@ export default function ChatRoom() {
                     ? <Square className="w-4 h-4 fill-white text-white" />
                     : <Play   className="w-4 h-4 fill-white text-white" />
                   }
-                  {isSearching ? 'إيقاف البحث' : 'ابدأ مباشرة'}
+                  {isSearching ? 'إيقاف البحث' : (filterCountry !== 'any' || filterGender !== 'any' ? 'رادار النجوم' : 'ابدأ مباشرة')}
                 </button>
               );
             })()}
 
-            {/* Report */}
+            {/* Star Radar Button */}
             <button
-              onClick={() => {
-                if (status !== 'matched') {
-                  toast.info("يمكنك الإبلاغ فقط أثناء المكالمة النشطة.");
-                  return;
-                }
-                setReportSent(false);
-                setReportReason('');
-                setShowReport(true);
-              }}
-              className="flex items-center justify-center gap-2.5 py-3.5 rounded-[18px] bg-white/[0.07] hover:bg-white/[0.12] text-rose-400 font-bold text-[13px] tracking-wide transition-all duration-200 active:scale-95 hover:scale-[1.02]"
+              onClick={() => setStatus('setup')}
+              className={`flex items-center justify-center gap-2.5 py-3.5 rounded-[18px] transition-all duration-200 active:scale-95 hover:scale-[1.02] font-bold text-[13px] tracking-wide ${filterCountry !== 'any' || filterGender !== 'any' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-white/[0.07] text-purple-300'}`}
             >
-              <Flag className="w-4 h-4" />
-              إبلاغ
+              <Zap className="w-4 h-4" />
+              الرادار
             </button>
           </div>
 
