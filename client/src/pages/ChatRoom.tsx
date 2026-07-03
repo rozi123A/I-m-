@@ -74,7 +74,7 @@ const COUNTRIES = [
   { code: 'FR', name: 'فرنسا 🇫🇷' },
 ];
 
-type Status = 'setup' | 'connecting' | 'waiting' | 'confirming' | 'matched' | 'ended';
+type Status = 'idle' | 'setup' | 'connecting' | 'waiting' | 'confirming' | 'matched' | 'ended';
 interface ChatMsg  { text: string; mine: boolean; name: string; time: string; }
 interface GiftAnim { emoji: string; name: string; senderName: string; id: number; }
 interface Notif    { partnerName: string; partnerAvatar: string; }
@@ -99,7 +99,7 @@ export default function ChatRoom() {
   // ── core state ─────────────────────────────────────────────────────────────
   const queryParams = new URLSearchParams(window.location.search);
   const autoStartParam = queryParams.get('autoStart') === 'true';
-  const [status,       setStatus]      = useState<Status>('setup');
+  const [status,       setStatus]      = useState<Status>('idle');
   const [peerName,     setPeerName]    = useState('');
   const [peerAvatar,   setPeerAvatar]  = useState('');
   const [isMicOn,      setIsMicOn]     = useState(true);
@@ -404,7 +404,7 @@ export default function ChatRoom() {
     // user data arrives, which cancels the timer before it fires.
     if (authLoading) return;
     const shouldAutoStart = autoStartParam || sessionStorage.getItem('chat_auto_start') === 'true';
-    if (shouldAutoStart && status === 'setup') {
+    if (shouldAutoStart && (status === 'setup' || status === 'idle')) {
       sessionStorage.removeItem('chat_auto_start');
       startSession('any', 'any');
     }
@@ -502,7 +502,8 @@ export default function ChatRoom() {
     setInputText('');
   };
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-  const statusLabel = status === 'connecting' ? 'جاري الاتصال...'
+  const statusLabel = status === 'idle'     ? 'اضغط ابدأ مباشرة للبدء'
+    : status === 'connecting' ? 'جاري الاتصال...'
     : status === 'waiting'  ? 'جاري البحث...'
     : status === 'confirming' ? 'تم العثور على شخص!'
     : status === 'matched'  ? fmt(callDuration)
@@ -855,6 +856,13 @@ export default function ChatRoom() {
                     <p className="text-white font-semibold text-lg">{peerName}</p>
                     <p className="text-white/50 text-sm mt-1">الكاميرا مطفاة</p>
                   </>
+                ) : status === 'idle' ? (
+                  <div className="text-center px-4">
+                    <div className="w-16 h-16 rounded-full bg-green-500/20 border-2 border-green-500/50 flex items-center justify-center mx-auto mb-3">
+                      <Play className="w-7 h-7 text-green-400 fill-green-400" />
+                    </div>
+                    <p className="text-white/60 text-sm">اضغط <span className="text-green-400 font-bold">ابدأ مباشرة</span> للبدء</p>
+                  </div>
                 ) : (
                   <div className="text-center">
                     <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-3" />
@@ -1075,7 +1083,7 @@ export default function ChatRoom() {
           <button
             onClick={() => {
               if (status === 'matched') { handleNext(); }
-              else { startSession('any', 'any'); }
+              else if (status === 'idle' || status === 'setup' || status === 'ended') { startSession('any', 'any'); }
             }}
             className="flex flex-col items-center gap-1.5 py-4 px-2 text-green-300 transition-all active:scale-95"
           >
