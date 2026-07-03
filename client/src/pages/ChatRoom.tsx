@@ -1168,24 +1168,24 @@ export default function ChatRoom() {
         <div className="h-px bg-white/8 mx-3 mb-0" />
 
         {/* Next + End Call row */}
-        <div className="grid grid-cols-3 gap-3 p-4">
-          {/* Next — spans 2 cols */}
+        <div className="flex items-stretch gap-2.5 px-3 pt-2 pb-3">
+          {/* Next */}
           <button
             onClick={handleNext}
             disabled={status === 'connecting' || status === 'waiting' || status === 'confirming'}
-            className="col-span-2 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-gray-900 font-black flex items-center justify-center gap-2.5 shadow-lg shadow-amber-900/40 disabled:opacity-40 active:scale-95 transition-all text-sm py-3.5 border-b-4 border-amber-600 active:border-b-0 active:translate-y-0.5"
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-[18px] bg-gradient-to-r from-amber-400 to-yellow-400 text-gray-900 font-bold text-sm tracking-wide shadow-md shadow-amber-900/25 hover:brightness-105 hover:shadow-amber-900/35 disabled:opacity-35 disabled:cursor-not-allowed active:scale-[0.97] transition-all duration-150"
           >
-            <SkipForward className="w-5 h-5" />
+            <SkipForward className="w-4 h-4 flex-shrink-0" />
             التالي — شخص جديد
           </button>
 
           {/* End Call */}
           <button
             onClick={handleEnd}
-            className="rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 text-white font-black flex flex-col items-center justify-center gap-1 shadow-lg shadow-red-900/50 active:scale-95 transition-all py-3.5 border-b-4 border-red-700 active:border-b-0 active:translate-y-0.5"
+            className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-[18px] bg-gradient-to-br from-red-500 to-rose-600 text-white font-bold text-sm shadow-md shadow-red-900/30 hover:brightness-105 active:scale-[0.97] transition-all duration-150"
           >
-            <PhoneOff className="w-5 h-5" />
-            <span className="text-[10px] font-black tracking-wide">إنهاء</span>
+            <PhoneOff className="w-4 h-4 flex-shrink-0" />
+            <span className="tracking-wide">إنهاء</span>
           </button>
         </div>
       </div>
