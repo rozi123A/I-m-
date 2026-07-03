@@ -426,8 +426,10 @@ export async function saveGift(senderId: number, receiverId: number, giftType: s
     await db.transaction(async (tx) => {
       // Deduct from sender
       await tx.update(users).set({ credits: sql`${users.credits} - ${cost}` }).where(eq(users.id, senderId));
-      // Add to receiver wallet
-      await tx.update(users).set({ wallet: sql`${users.wallet} + ${cost}` }).where(eq(users.id, receiverId));
+      // Add to receiver's credit balance so their balance actually increases
+      if (receiverId > 0) {
+        await tx.update(users).set({ credits: sql`${users.credits} + ${cost}` }).where(eq(users.id, receiverId));
+      }
       // Log gift
       await tx.insert(gifts).values({ senderId, receiverId, giftType, cost });
     });
@@ -513,6 +515,33 @@ export async function acceptFriendRequest(senderId: number, receiverId: number) 
     });
   } catch (err) {
     console.error('[Database] acceptFriendRequest failed:', err);
+  }
+}
+
+export async function getIncomingFriendRequests(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    const pending = await db.select().from(friendRequests)
+      .where(sql`"receiverId" = ${userId} AND status = 'pending'`)
+      .orderBy(desc(friendRequests.createdAt));
+    if (pending.length === 0) return [];
+    const senderIds = pending.map(r => r.senderId);
+    const senders = await db.select().from(users).where(sql`id IN (${sql.join(senderIds, sql`, `)})`);
+    const senderMap = new Map(senders.map(s => [s.id, s]));
+    return pending.map(r => {
+      const sender = senderMap.get(r.senderId);
+      return {
+        requestId: r.id,
+        senderId: r.senderId,
+        name: sender?.name || 'مستخدم',
+        avatar: sender?.avatar || '',
+        createdAt: r.createdAt,
+      };
+    });
+  } catch (err) {
+    console.error('[Database] getIncomingFriendRequests failed:', err);
+    return [];
   }
 }
 
