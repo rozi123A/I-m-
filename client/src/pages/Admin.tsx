@@ -68,19 +68,20 @@ export default function Admin() {
   const maxCount = Math.max(...(countryStats?.map(s => s.count) ?? [1]), 1);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-4 max-w-2xl mx-auto">
+    <div className="min-h-screen text-white p-4 max-w-2xl mx-auto" style={{ backgroundColor: '#030712' }}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 pt-4">
-        <button onClick={() => setLocation('/')} className="text-white/50 hover:text-white">
+        <button onClick={() => setLocation('/')} style={{ color: 'rgba(255,255,255,0.5)' }}>
           <ArrowRight className="w-5 h-5" />
         </button>
         <div>
           <h1 className="text-xl font-black">لوحة الإدارة</h1>
-          <p className="text-white/40 text-xs">مراقبة التسجيلات والدول</p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>مراقبة التسجيلات والدول</p>
         </div>
         <button
           onClick={() => refetch()}
-          className={`mr-auto p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors ${isFetching ? 'animate-spin' : ''}`}
+          className={`mr-auto p-2 rounded-xl transition-colors ${isFetching ? 'animate-spin' : ''}`}
+          style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
         >
           <RefreshCw className="w-4 h-4" />
         </button>
@@ -88,43 +89,43 @@ export default function Admin() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-purple-900/40 border border-purple-500/30 rounded-2xl p-3 text-center">
-          <Users className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+        <div className="rounded-2xl p-3 text-center" style={{ backgroundColor: 'rgba(88,28,135,0.5)', border: '1px solid rgba(168,85,247,0.3)' }}>
+          <Users className="w-5 h-5 mx-auto mb-1" style={{ color: '#c084fc' }} />
           <p className="text-2xl font-black text-white">{totalUsers}</p>
-          <p className="text-purple-300 text-[11px]">إجمالي المستخدمين</p>
+          <p style={{ color: '#d8b4fe', fontSize: '11px' }}>إجمالي المستخدمين</p>
         </div>
-        <div className="bg-yellow-900/40 border border-yellow-500/30 rounded-2xl p-3 text-center">
-          <Crown className="w-5 h-5 text-yellow-400 mx-auto mb-1" />
+        <div className="rounded-2xl p-3 text-center" style={{ backgroundColor: 'rgba(113,63,18,0.5)', border: '1px solid rgba(234,179,8,0.3)' }}>
+          <Crown className="w-5 h-5 mx-auto mb-1" style={{ color: '#facc15' }} />
           <p className="text-2xl font-black text-white">{premiumCount}</p>
-          <p className="text-yellow-300 text-[11px]">مشتركون Premium</p>
+          <p style={{ color: '#fde047', fontSize: '11px' }}>مشتركون Premium</p>
         </div>
-        <div className="bg-green-900/40 border border-green-500/30 rounded-2xl p-3 text-center">
-          <Globe className="w-5 h-5 text-green-400 mx-auto mb-1" />
+        <div className="rounded-2xl p-3 text-center" style={{ backgroundColor: 'rgba(20,83,45,0.5)', border: '1px solid rgba(34,197,94,0.3)' }}>
+          <Globe className="w-5 h-5 mx-auto mb-1" style={{ color: '#4ade80' }} />
           <p className="text-2xl font-black text-white">{todayCount}</p>
-          <p className="text-green-300 text-[11px]">تسجيل اليوم</p>
+          <p style={{ color: '#86efac', fontSize: '11px' }}>تسجيل اليوم</p>
         </div>
       </div>
 
       {/* Country Stats */}
       {countryStats && countryStats.length > 0 && (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6">
-          <h2 className="text-sm font-bold text-white/80 mb-3 flex items-center gap-2">
-            <Globe className="w-4 h-4 text-blue-400" />
+        <div className="rounded-2xl p-4 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.8)' }}>
+            <Globe className="w-4 h-4" style={{ color: '#60a5fa' }} />
             المستخدمون حسب الدولة
           </h2>
           <div className="space-y-2">
             {countryStats.map(s => (
               <div key={s.country} className="flex items-center gap-2">
-                <span className="text-sm w-28 text-right text-white/80 truncate">
+                <span className="text-sm w-28 text-right truncate" style={{ color: 'rgba(255,255,255,0.8)' }}>
                   {COUNTRY_NAMES[s.country] ?? s.country}
                 </span>
-                <div className="flex-1 bg-white/10 rounded-full h-2 overflow-hidden">
+                <div className="flex-1 rounded-full h-2 overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
                   <div
-                    className="h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all"
-                    style={{ width: `${(s.count / maxCount) * 100}%` }}
+                    className="h-2 rounded-full transition-all"
+                    style={{ width: `${(s.count / maxCount) * 100}%`, background: 'linear-gradient(to right, #9333ea, #ec4899)' }}
                   />
                 </div>
-                <span className="text-xs font-bold text-white/60 w-6 text-left">{s.count}</span>
+                <span className="text-xs font-bold w-6 text-left" style={{ color: 'rgba(255,255,255,0.6)' }}>{s.count}</span>
               </div>
             ))}
           </div>
@@ -132,20 +133,21 @@ export default function Admin() {
       )}
 
       {/* Registrations List */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-white/10">
-          <h2 className="text-sm font-bold text-white/80 flex items-center gap-2">
-            <Users className="w-4 h-4 text-purple-400" />
+      <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+          <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: 'rgba(255,255,255,0.8)' }}>
+            <Users className="w-4 h-4" style={{ color: '#c084fc' }} />
             آخر التسجيلات
           </h2>
         </div>
         {registrations && registrations.length > 0 ? (
-          <div className="divide-y divide-white/5">
+          <div>
             {registrations.map(u => (
-              <div key={u.id} className="flex items-center gap-3 px-4 py-3">
+              <div key={u.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                 <img
                   src={u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`}
-                  className="w-9 h-9 rounded-full bg-white/10 flex-shrink-0"
+                  className="w-9 h-9 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
                   onError={(e) => { (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`; }}
                 />
                 <div className="flex-1 min-w-0">
@@ -154,31 +156,31 @@ export default function Admin() {
                       {u.name || 'مجهول'}
                     </span>
                     {u.isPremium && (
-                      <Crown className="w-3 h-3 text-yellow-400 flex-shrink-0" />
+                      <Crown className="w-3 h-3 flex-shrink-0" style={{ color: '#facc15' }} />
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-white/50">
+                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
                       {u.country ? (COUNTRY_NAMES[u.country] ?? u.country) : '🌍 دولة غير معروفة'}
                     </span>
-                    <span className="text-white/20 text-[10px]">•</span>
-                    <span className="text-[11px] text-white/40">{u.loginMethod ?? 'مجهول'}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '10px' }}>•</span>
+                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{u.loginMethod ?? 'مجهول'}</span>
                   </div>
                 </div>
-                <span className="text-[11px] text-white/30 flex-shrink-0 text-left">
+                <span className="flex-shrink-0 text-left" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
                   {timeAgo(u.createdAt)}
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <div className="py-12 text-center text-white/30 text-sm">
+          <div className="py-12 text-center text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>
             لا يوجد مستخدمون حتى الآن
           </div>
         )}
       </div>
 
-      <p className="text-center text-white/20 text-[11px] mt-4 pb-4">
+      <p className="text-center text-[11px] mt-4 pb-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
         يتحدث تلقائياً كل 30 ثانية
       </p>
     </div>
