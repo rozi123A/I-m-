@@ -1232,7 +1232,11 @@ export default function ChatRoom() {
 
             {/* Star Radar Button */}
             <button
-              onClick={() => setStatus('setup')}
+              onClick={() => {
+                const isSearching = status === 'connecting' || status === 'waiting' || status === 'confirming';
+                if (isSearching) stopSession();
+                setStatus('setup');
+              }}
               className={`flex items-center justify-center gap-2.5 py-3.5 rounded-[18px] transition-all duration-200 active:scale-95 hover:scale-[1.02] font-bold text-[13px] tracking-wide ${filterCountry !== 'any' || filterGender !== 'any' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-white/[0.07] text-purple-300'}`}
             >
               <Zap className="w-4 h-4" />
