@@ -550,7 +550,7 @@ export default function ChatRoom() {
 
   // ── stop searching (cancel queue without ending a call) ───────────────────
   const stopSession = useCallback(() => {
-    destroyedRef.current = true;
+    destroyedRef.current = true;   // stays true until next startSession() resets it
     esRef.current?.close();
     esRef.current = null;
     closePC();
@@ -560,7 +560,9 @@ export default function ChatRoom() {
     if (localVideoRef.current)  localVideoRef.current.srcObject  = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     setStatus('idle');
-    destroyedRef.current = false;   // allow restart
+    // NOTE: do NOT reset destroyedRef here — onerror fires async after close()
+    // and would call setStatus('ended') if destroyedRef were false.
+    // startSession() resets destroyedRef.current = false when a new session begins.
   }, [closePC, stopTimer]);
   const handleRejectMatch = useCallback(() => {
     setPendingMatch(null);
