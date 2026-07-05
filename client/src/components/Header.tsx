@@ -61,8 +61,8 @@ export default function Header() {
                 className="text-gray-800 font-semibold text-sm hover:text-purple-600 transition-colors flex items-center gap-1"
               >
                 {(user as any).name || "المستخدم"}
-                {(user as any).isPremium && (
-                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" title="عضو VIP" />
+                {(user as { isPremium?: boolean }).isPremium && (
+                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                 )}
                 <UserCircle className="w-3.5 h-3.5 text-purple-400" />
               </button>
@@ -120,7 +120,7 @@ export default function Header() {
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-gray-800 flex items-center gap-1 truncate">
                       {(user as any).name || "المستخدم"}
-                      {(user as any).isPremium && (
+                      {(user as { isPremium?: boolean }).isPremium && (
                         <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
                       )}
                     </p>

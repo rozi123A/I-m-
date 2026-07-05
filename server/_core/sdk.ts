@@ -219,9 +219,9 @@ class SDKServer {
       }
 
       return {
-        openId,
-        appId,
-        name,
+        openId: String(openId),
+        appId: String(appId),
+        name: String(name),
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));

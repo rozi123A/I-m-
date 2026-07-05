@@ -71,21 +71,23 @@ export default function NotificationBell() {
 
   const { data: dbNotifs, refetch: refetchNotifs } = trpc.notifications.get.useQuery(undefined, {
     enabled: isAuthenticated && !!userId,
-    onSuccess: (data) => {
-      // Merge DB notifications with local storage if needed, or just use DB
-      const formatted = data.map(n => ({
+  });
+
+  useEffect(() => {
+    if (dbNotifs) {
+      const formatted = dbNotifs.map(n => ({
         id: n.id.toString(),
         type: n.type,
         title: n.title || undefined,
         message: n.message || undefined,
         fromName: n.fromName || undefined,
         fromAvatar: n.fromAvatar || undefined,
-        ts: n.createdAt.getTime(),
+        ts: n.createdAt instanceof Date ? n.createdAt.getTime() : new Date(n.createdAt).getTime(),
         read: n.isRead
       }));
       setNotifs(formatted);
     }
-  });
+  }, [dbNotifs]);
 
   const markReadMutation = trpc.notifications.markAsRead.useMutation({
     onSuccess: () => refetchNotifs()

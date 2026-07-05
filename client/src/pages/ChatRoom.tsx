@@ -14,6 +14,7 @@ import TranslationPanel from '@/components/TranslationPanel';
 import FaceFiltersPanel from '@/components/FaceFiltersPanel';
 import FriendsPanel from '@/components/FriendsPanel';
 import DirectMessagePanel from '@/components/DirectMessagePanel';
+import PremiumMessageBubble from "@/components/PremiumMessageBubble";
 import { playMessageSound, playFriendSound, playRingSound } from '@/lib/notificationSound';
 import { toast } from 'sonner';
 
@@ -1056,12 +1057,14 @@ export default function ChatRoom() {
             <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
               {messages.length === 0 && <p className="text-white/30 text-xs text-center mt-4">لا توجد رسائل بعد</p>}
               {messages.map((m, i) => (
-                <div key={i} className={`flex flex-col ${m.mine ? 'items-end' : 'items-start'}`}>
-                  <span className="text-white/40 text-xs mb-0.5">{m.name} · {m.time}</span>
-                  <div className={`px-3 py-2 rounded-2xl text-sm max-w-[85%] break-words ${m.mine ? 'bg-gradient-to-r from-purple-600 to-pink-500 text-white' : 'bg-white/15 text-white'}`}>
-                    {m.text}
-                  </div>
-                </div>
+                <PremiumMessageBubble
+                  key={i}
+                  text={m.text}
+                  senderName={m.name}
+                  time={m.time}
+                  isMine={m.mine}
+                  isPremium={user?.isPremium || false}
+                />
               ))}
               <div ref={messagesEndRef} />
             </div>
@@ -1236,7 +1239,11 @@ export default function ChatRoom() {
             <button
               onClick={() => {
                 const isSearching = status === 'connecting' || status === 'waiting' || status === 'confirming';
-                if (isSearching) stopSession();
+                if (isSearching) {
+                  stopSession();
+                  toast.info("تم إيقاف البحث. اضغط على الرادار مرة أخرى لضبط الفلاتر.");
+                  return;
+                }
                 setStatus('setup');
               }}
               className={`flex items-center justify-center gap-2.5 py-3.5 rounded-[18px] transition-all duration-200 active:scale-95 hover:scale-[1.02] font-bold text-[13px] tracking-wide ${filterCountry !== 'any' || filterGender !== 'any' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-white/[0.07] text-purple-300'}`}

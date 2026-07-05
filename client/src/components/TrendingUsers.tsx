@@ -31,7 +31,15 @@ const MOCK_USERS = [
   { id: -6, name: "علي",   age: 24, online: true, profileViews: 2100, avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ali",      country: null },
 ];
 
-type DisplayUser = typeof MOCK_USERS[0];
+type DisplayUser = {
+  id: number;
+  name: string;
+  age: number;
+  online: boolean;
+  profileViews: number;
+  avatar: string;
+  country: string | null;
+};
 
 function UserCard({ user }: { user: DisplayUser }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -57,7 +65,7 @@ function UserCard({ user }: { user: DisplayUser }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id]);
 
-  const code = user.country?.toUpperCase();
+  const code = (user.country as string | undefined)?.toUpperCase();
   const flag = countryFlag(code);
   const countryName = code ? (COUNTRY_NAMES[code] ?? code) : null;
 
@@ -123,7 +131,7 @@ export default function TrendingUsers() {
   const { user: currentUser } = useAuth();
   const utils = trpc.useUtils();
 
-  const { data: realUsers, isLoading } = trpc.users.getRecent.useQuery(20, {
+  const { data: realUsers, isPending } = trpc.users.getRecent.useQuery(20, {
     staleTime: 30_000,
   });
 
@@ -173,7 +181,7 @@ export default function TrendingUsers() {
           </p>
         </div>
 
-        {isLoading ? (
+        {isPending ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
           </div>

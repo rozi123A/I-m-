@@ -167,7 +167,7 @@ function registerSignalingRoutes(app: express.Express) {
 
     const last = lastPeers.get(name);
     if (last && Date.now() - last.ts < NOTIF_TTL) {
-      const partnerWaiting = [...peers.values()].find(
+      const partnerWaiting = Array.from(peers.values()).find(
         p => p.name === last.partnerName && p.partnerId === null && p.res !== res
       );
       if (partnerWaiting) {
@@ -230,7 +230,7 @@ function registerSignalingRoutes(app: express.Express) {
       });
       // Also send to persistent notification system if users are logged in
       if (peer.userId && partner.userId) {
-        sendUserNotification(partner.userId, {
+        sendUserNotification(String(partner.userId), {
           type: "friend-request",
           fromName: peer.name,
           fromAvatar: peer.avatar,
@@ -245,7 +245,7 @@ function registerSignalingRoutes(app: express.Express) {
       });
       // Also send to persistent notification system if users are logged in
       if (peer.userId && partner.userId) {
-        sendUserNotification(partner.userId, {
+        sendUserNotification(String(partner.userId), {
           type: "friend-accepted",
           fromName: peer.name,
           fromAvatar: peer.avatar,

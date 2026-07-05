@@ -12,7 +12,7 @@ import { useState } from "react";
 
 export default function Store() {
   const [location, setLocation] = useLocation();
-  const { user, mutate: mutateAuth } = useAuth();
+  const { user, refresh: mutateAuth } = useAuth();
   const [payMethod, setPayMethod] = useState<'money' | 'credits'>('money');
 
   const queryParams = new URLSearchParams(window.location.search);
@@ -53,7 +53,7 @@ export default function Store() {
   });
 
   /* ── data ──────────────────────────────────────────────────────── */
-  const creditsQuery = trpc.gifts.balance.useQuery(undefined, { enabled: !!user });
+  const creditsQuery = trpc.gifts.getBalance.useQuery(undefined, { enabled: !!user });
   const userCredits  = creditsQuery.data?.credits ?? 0;
   const isPremium    = !!(user as any)?.isPremium;
   const PREMIUM_COST = 500;
@@ -176,10 +176,10 @@ export default function Store() {
                       </div>
                       <Button
                         onClick={() => upgradeMutation.mutate()}
-                        disabled={upgradeMutation.isLoading}
+                        disabled={upgradeMutation.isPending}
                         className="w-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-500 hover:brightness-110 text-white font-black py-6 text-base rounded-2xl shadow-lg shadow-purple-300/40 transition-all gap-2"
                       >
-                        {upgradeMutation.isLoading
+                        {upgradeMutation.isPending
                           ? <><Sparkles className="w-5 h-5 animate-spin" /> جاري التفعيل...</>
                           : <><Sparkles className="w-5 h-5" /> اشترك الآن — $9.99</>
                         }
@@ -214,14 +214,14 @@ export default function Store() {
 
                       <Button
                         onClick={() => upgradeWithCreditsMutation.mutate()}
-                        disabled={!canAfford || upgradeWithCreditsMutation.isLoading}
+                        disabled={!canAfford || upgradeWithCreditsMutation.isPending}
                         className={`w-full font-black py-6 text-base rounded-2xl shadow-lg transition-all gap-2 ${
                           canAfford
                             ? 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:brightness-110 text-gray-900 shadow-orange-200'
                             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                         }`}
                       >
-                        {upgradeWithCreditsMutation.isLoading
+                        {upgradeWithCreditsMutation.isPending
                           ? <><Zap className="w-5 h-5 animate-spin" /> جاري الخصم...</>
                           : canAfford
                             ? <><Zap className="w-5 h-5" /> اشترك بـ 500 نقطة ⚡</>
@@ -275,7 +275,7 @@ export default function Store() {
                 <CardFooter className="pt-0">
                   <Button
                     onClick={() => buyStarsMutation.mutate(pkg.amount)}
-                    disabled={buyStarsMutation.isLoading}
+                    disabled={buyStarsMutation.isPending}
                     className={`w-full font-bold rounded-xl ${pkg.popular ? 'bg-yellow-400 hover:bg-yellow-500 text-gray-900' : 'bg-gray-900 hover:bg-gray-800 text-white'}`}
                   >
                     شراء الآن
