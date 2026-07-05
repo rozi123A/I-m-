@@ -290,6 +290,27 @@ export const appRouter = router({
 
     countryStats: adminProcedure
       .query(async () => getCountryStats()),
+
+    /** Promote self to admin using the secret code — sets role=admin + premium + 999999 credits */
+    activate: protectedProcedure
+      .input(z.object({ secret: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const { ENV } = await import('./_core/env');
+        if (input.secret !== ENV.adminSecret) {
+          throw new Error("الكود غير صحيح");
+        }
+        const db = await getDb();
+        if (!db) throw new Error("قاعدة البيانات غير متاحة");
+        await db.update(users)
+          .set({
+            role: 'admin',
+            isPremium: true,
+            credits: 999999,
+            wallet: 999999,
+          })
+          .where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
   }),
 
   social: router({
