@@ -505,52 +505,58 @@ export default function ChatRoom() {
     
     const newMode = facingMode === 'user' ? 'environment' : 'user';
     try {
-      // Try exact facing mode first, then fallback
-      let newStream: MediaStream;
+      // طلب الفيديو فقط — الاحتفاظ بمسار الصوت الموجود لتجنب أي مشكلة في الإذن
+      let newVideoStream: MediaStream;
       try {
-        newStream = await navigator.mediaDevices.getUserMedia({
+        newVideoStream = await navigator.mediaDevices.getUserMedia({
           video: { 
             facingMode: { exact: newMode },
             width: { ideal: 1280 },
             height: { ideal: 720 }
           },
-          audio: true
+          audio: false
         });
       } catch {
-        newStream = await navigator.mediaDevices.getUserMedia({
+        newVideoStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: newMode },
-          audio: true
+          audio: false
         });
       }
-      
-      // Replace video track in existing PeerConnection
+
+      const newVideoTrack = newVideoStream.getVideoTracks()[0];
+
+      // استبدال مسار الفيديو في WebRTC دون لمس الصوت
       if (pcRef.current) {
-        const videoTrack = newStream.getVideoTracks()[0];
         const senders = pcRef.current.getSenders();
         const videoSender = senders.find(s => s.track?.kind === 'video');
         if (videoSender) {
-          await videoSender.replaceTrack(videoTrack);
+          await videoSender.replaceTrack(newVideoTrack);
         }
       }
 
-      localStreamRef.current.getTracks().forEach(t => t.stop());
-      
-      localStreamRef.current = newStream;
+      // إيقاف مسارات الفيديو القديمة فقط — الاحتفاظ بمسارات الصوت
+      localStreamRef.current.getVideoTracks().forEach(t => t.stop());
+
+      // بناء stream جديد: فيديو جديد + صوت قديم
+      const audioTracks = localStreamRef.current.getAudioTracks();
+      const combinedStream = new MediaStream([newVideoTrack, ...audioTracks]);
+
+      localStreamRef.current = combinedStream;
       if (localVideoRef.current) {
-        localVideoRef.current.srcObject = newStream;
+        localVideoRef.current.srcObject = combinedStream;
       }
       
       setFacingMode(newMode);
       setIsVideoOn(true);
-      toast.success(newMode === 'user' ? "تم التبديل للكاميرا الأمامية" : "تم التبديل للكاميرا الخلفية");
+      toast.success(newMode === 'user' ? "تم التبديل للكاميرا الأمامية ✅" : "تم التبديل للكاميرا الخلفية ✅");
     } catch (e) {
       console.error("Failed to switch camera:", e);
-      const isAdminCatch = (user as any)?.role === 'admin';
-      if (!isAdminCatch) {
+      const isAdminFail = (user as any)?.role === 'admin';
+      if (!isAdminFail) {
         sessionStorage.setItem('chat_auto_start', 'true');
         setLocation('/store?from=chat');
       } else {
-        toast.error("فشل تبديل الكاميرا، تأكد من أن جهازك يدعم كاميرا خلفية");
+        toast.error("تعذّر الوصول للكاميرا — تأكد من منح الإذن في المتصفح");
       }
     }
   };
