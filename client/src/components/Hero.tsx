@@ -30,7 +30,7 @@ export default function Hero() {
 
         {/* Brand */}
         <div className="mb-6 flex justify-center">
-          <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-3xl font-bold text-white shadow-2xl animate-float">
+          <div className="w-16 h-16 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center text-3xl font-bold text-white shadow-2xl animate-float">
             <Video className="w-8 h-8 text-white" />
           </div>
         </div>
@@ -61,7 +61,7 @@ export default function Hero() {
               <div className="relative">
                 <div className="absolute inset-0 rounded-full bg-gradient-to-br from-pink-400 via-purple-500 to-cyan-400 blur-xl opacity-40 group-hover:opacity-80 transition-opacity duration-500 scale-125 animate-pulse" />
                 {/* Avatar circle */}
-                <div className="relative w-40 h-40 rounded-full border-4 border-white/80 shadow-2xl overflow-hidden bg-white/10 backdrop-blur-sm group-hover:scale-105 transition-transform duration-500">
+                <div className="relative w-40 h-40 rounded-full border-4 border-white/80 shadow-2xl overflow-hidden bg-white/20 group-hover:scale-105 transition-transform duration-500">
                   <img
                     src={
                       user.avatar ||
@@ -101,14 +101,14 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row gap-3 mt-3 flex-wrap justify-center">
               <button
                 onClick={() => logout()}
-                className="flex items-center justify-center gap-2 text-white/80 hover:text-white text-sm border-2 border-white/30 hover:border-white/70 hover:bg-white/10 rounded-full px-7 py-2.5 backdrop-blur-sm transition-all duration-200 font-medium"
+                className="flex items-center justify-center gap-2 text-white/80 hover:text-white text-sm border-2 border-white/30 hover:border-white/70 hover:bg-white/10 rounded-full px-7 py-2.5 transition-all duration-200 font-medium"
               >
                 <LogOut className="w-4 h-4 flex-shrink-0" />
                 تسجيل الخروج
               </button>
               <button
                 onClick={async () => { await logout(); setLocation("/login"); }}
-                className="flex items-center justify-center gap-2 text-white/80 hover:text-white text-sm border-2 border-white/30 hover:border-white/70 hover:bg-white/10 rounded-full px-7 py-2.5 backdrop-blur-sm transition-all duration-200 font-medium"
+                className="flex items-center justify-center gap-2 text-white/80 hover:text-white text-sm border-2 border-white/30 hover:border-white/70 hover:bg-white/10 rounded-full px-7 py-2.5 transition-all duration-200 font-medium"
               >
                 <UserPlus className="w-4 h-4 flex-shrink-0" />
                 إضافة حساب آخر
@@ -135,7 +135,7 @@ export default function Hero() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-white/60 text-white hover:bg-white/15 text-lg px-8 py-6 rounded-full backdrop-blur-sm transition-all duration-300 gap-2.5 font-semibold"
+                className="border-2 border-white/60 text-white hover:bg-white/20 text-lg px-8 py-6 rounded-full transition-all duration-300 gap-2.5 font-semibold"
                 onClick={() =>
                   document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })
                 }
