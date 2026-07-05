@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, ne, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { InsertUser, users, InsertMessage, messages, gifts, friendRequests, friends, notifications } from '../drizzle/schema';
@@ -327,7 +327,7 @@ export async function getRecentUsers(limit = 20) {
         country: users.country,
       })
       .from(users)
-      .where(isNotNull(users.name))
+      .where(and(isNotNull(users.name), ne(users.role, 'admin')))
       .orderBy(desc(users.lastSignedIn))
       .limit(limit);
   } catch (error) {
@@ -565,8 +565,12 @@ export async function getUserPublicProfile(userId: number) {
       credits: users.credits,
       profileViews: users.profileViews,
       createdAt: users.createdAt,
+      role: users.role,
     }).from(users).where(eq(users.id, userId)).limit(1);
-    return rows[0] ?? null;
+    const profile = rows[0] ?? null;
+    // الأدمن لا يمكن رؤية ملفه الشخصي من قِبل أي أحد
+    if (profile?.role === 'admin') return null;
+    return profile;
   } catch (err) {
     console.error('[Database] getUserPublicProfile failed:', err);
     return null;
