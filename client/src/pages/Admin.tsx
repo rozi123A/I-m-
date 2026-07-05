@@ -25,11 +25,13 @@ export default function Admin() {
   const [, setLocation] = useLocation();
   const { user, loading } = useAuth();
 
+  const isAdmin = !loading && !!user && (user as any).role === 'admin';
+
   const { data: registrations, isLoading: regLoading, refetch, isFetching } =
-    trpc.admin.newRegistrations.useQuery(50, { refetchInterval: 30_000 });
+    trpc.admin.newRegistrations.useQuery(50, { refetchInterval: 30_000, enabled: isAdmin });
 
   const { data: countryStats } =
-    trpc.admin.countryStats.useQuery(undefined, { refetchInterval: 30_000 });
+    trpc.admin.countryStats.useQuery(undefined, { refetchInterval: 30_000, enabled: isAdmin });
 
   useEffect(() => {
     if (!loading && (!user || (user as any).role !== 'admin')) {
@@ -37,7 +39,17 @@ export default function Admin() {
     }
   }, [user, loading]);
 
-  if (loading || regLoading) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) return null;
+
+  if (regLoading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
