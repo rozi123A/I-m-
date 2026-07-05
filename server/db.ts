@@ -452,6 +452,17 @@ export async function deductStars(userId: number, amount: number): Promise<boole
   }
 }
 
+export async function getUserCountryAndWallet(userId: number): Promise<{ country: string | null; wallet: number }> {
+  const db = await getDb();
+  if (!db) return { country: null, wallet: 0 };
+  try {
+    const result = await db.select({ country: users.country, wallet: users.wallet }).from(users).where(eq(users.id, userId)).limit(1);
+    return { country: result[0]?.country ?? null, wallet: result[0]?.wallet ?? 0 };
+  } catch {
+    return { country: null, wallet: 0 };
+  }
+}
+
 export async function addCredits(userId: number, amount: number): Promise<void> {
   const db = await getDb();
   if (!db) return;

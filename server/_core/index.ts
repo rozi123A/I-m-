@@ -116,7 +116,7 @@ function removePeer(peerId: string) {
 }
 
 function registerSignalingRoutes(app: express.Express) {
-  app.get("/api/signal/connect", (req: Request, res: Response) => {
+  app.get("/api/signal/connect", async (req: Request, res: Response) => {
     const peerId        = req.query.peerId        as string;
     const name          = (req.query.name          as string) || "مستخدم";
     const avatar        = (req.query.avatar        as string) || "";
@@ -134,6 +134,31 @@ function registerSignalingRoutes(app: express.Express) {
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
+
+    // ── Server-side Radar star validation ────────────────────────────────────
+    if (userId && userId > 0) {
+      const isPaidFilter = filterGender !== 'any' || filterCountry !== 'any';
+      if (isPaidFilter) {
+        const { getUserCountryAndWallet, deductStars } = await import('../db');
+        const { country: userCountry, wallet } = await getUserCountryAndWallet(userId);
+        const isOwnCountry = userCountry && filterCountry !== 'any' && filterCountry.toUpperCase() === userCountry.toUpperCase();
+        const actuallyPaid = filterGender !== 'any' || (filterCountry !== 'any' && !isOwnCountry);
+        if (actuallyPaid) {
+          if (wallet < 5) {
+            sseEvent(res, { type: 'radar-blocked', message: `رصيدك ${wallet} نجمة فقط. تحتاج 5 نجوم لاستخدام الرادار. اشحن الآن!` });
+            res.end();
+            return;
+          }
+          const ok = await deductStars(userId, 5);
+          if (!ok) {
+            sseEvent(res, { type: 'radar-blocked', message: 'رصيد نجوم غير كافٍ لاستخدام الرادار. اشحن الآن!' });
+            res.end();
+            return;
+          }
+        }
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     peers.set(peerId, { res, name, avatar, gender, filterGender, filterCountry, userId, partnerId: null });
     waitingQueue.push(peerId);

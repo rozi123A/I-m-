@@ -392,8 +392,19 @@ export default function ChatRoom() {
           try { new Notification('تم قبول طلب الصداقة', { body: `${msg.fromName || 'مستخدم'} قبل طلب صداقتك`, icon: '/favicon.ico' }); } catch {}
         }
         break;
+      case 'radar-blocked':
+        // Server rejected connection: insufficient stars
+        destroyedRef.current = true;
+        esRef.current?.close();
+        localStreamRef.current?.getTracks().forEach(t => t.stop());
+        closePC();
+        setStatus('idle');
+        toast.error(msg.message || 'رصيد نجوم غير كافٍ لاستخدام الرادار');
+        walletQuery.refetch();
+        setTimeout(() => setLocation('/store'), 1500);
+        break;
     }
-  }, [createPC, signal, addMessage, startTimer, stopTimer, closePC, resetRemote, showGiftAnim, peerName]);
+  }, [createPC, signal, addMessage, startTimer, stopTimer, closePC, resetRemote, showGiftAnim, peerName, walletQuery, setLocation]);
 
   const deductRadarStars = trpc.gifts.deductRadarStars.useMutation();
 
