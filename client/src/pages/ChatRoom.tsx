@@ -19,17 +19,14 @@ import PremiumMessageBubble from "@/components/PremiumMessageBubble";
 import { playMessageSound, playFriendSound, playRingSound } from '@/lib/notificationSound';
 import { toast } from 'sonner';
 
-// ── ICE config with STUN + multiple free TURN servers for 4G/5G ─────────────
+// ── ICE config with TURN servers for 4G/5G mobile networks ───────────────────
 const ICE_CONFIG: RTCConfiguration = {
   iceServers: [
-    // ── STUN servers (multiple providers for reliability) ──
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' },
-    { urls: 'stun:stun.relay.metered.ca:80' },
-    // ── TURN: openrelay.metered.ca (free public) ──
     {
       urls: 'turn:openrelay.metered.ca:80',
       username: 'openrelayproject',
@@ -49,22 +46,6 @@ const ICE_CONFIG: RTCConfiguration = {
       urls: 'turn:openrelay.metered.ca:80?transport=tcp',
       username: 'openrelayproject',
       credential: 'openrelayproject',
-    },
-    // ── TURN: freestun.net (free backup TURN) ──
-    {
-      urls: 'turn:freestun.net:3479',
-      username: 'free',
-      credential: 'free',
-    },
-    {
-      urls: 'turn:freestun.net:5350',
-      username: 'free',
-      credential: 'free',
-    },
-    {
-      urls: 'turns:freestun.net:5349',
-      username: 'free',
-      credential: 'free',
     },
   ],
   iceCandidatePoolSize: 10,
@@ -1373,104 +1354,132 @@ export default function ChatRoom() {
       <div className="mt-3 bg-gray-900/80 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
 
         {/* ═══════════════ Controls Panel ═══════════════ */}
-        <div className="px-3 pt-3 pb-2 space-y-2.5">
+        <div className="px-3 pt-3 pb-2 space-y-2">
 
           {/* ── Row 1 : دردشة · صوت · كاميرا · ميكروفون ─── */}
-          <div className="grid grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-4 gap-2">
 
             {/* Chat */}
             <button
               onClick={() => { setShowChat(v => !v); setUnread(0); }}
-              className={`relative flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] transition-all duration-200 active:scale-95 hover:scale-[1.03] ${showChat ? 'bg-cyan-500/20 text-cyan-300' : 'bg-white/[0.07] text-emerald-300 hover:bg-white/[0.11]'}`}
+              className="relative flex flex-col items-center gap-1.5 pt-2.5 pb-2 rounded-2xl transition-all duration-200 active:scale-95 hover:scale-[1.04]"
+              style={{ background: showChat ? 'rgba(6,182,212,0.18)' : 'rgba(16,185,129,0.12)', border: showChat ? '1px solid rgba(6,182,212,0.5)' : '1px solid rgba(16,185,129,0.3)', boxShadow: showChat ? '0 0 14px rgba(6,182,212,0.25), inset 0 1px 0 rgba(255,255,255,0.07)' : '0 0 10px rgba(16,185,129,0.15), inset 0 1px 0 rgba(255,255,255,0.05)' }}
             >
-              <div className={`w-11 h-11 rounded-[14px] flex items-center justify-center shadow-md relative ${showChat ? 'bg-gradient-to-br from-cyan-500 to-blue-600 shadow-cyan-900/40' : 'bg-gradient-to-br from-emerald-500 to-green-700 shadow-emerald-900/40'}`}>
-                <MessageSquare className="w-[18px] h-[18px] text-white" />
+              <div
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center relative"
+                style={{ background: showChat ? 'linear-gradient(135deg,#06b6d4,#2563eb)' : 'linear-gradient(135deg,#10b981,#059669)', boxShadow: showChat ? '0 0 20px rgba(6,182,212,0.7), 0 4px 12px rgba(6,182,212,0.4)' : '0 0 18px rgba(16,185,129,0.65), 0 4px 12px rgba(16,185,129,0.35)' }}
+              >
+                <MessageSquare className="w-[18px] h-[18px] text-white drop-shadow" />
                 {unread > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-black border-2 border-gray-900 px-0.5">
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-black border-2 border-gray-900 px-0.5" style={{boxShadow:'0 0 8px rgba(239,68,68,0.8)'}}>
                     {unread}
                   </span>
                 )}
               </div>
-              <span className="text-[10.5px] font-bold tracking-wide">دردشة</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color: showChat ? '#67e8f9' : '#6ee7b7', textShadow: showChat ? '0 0 8px rgba(6,182,212,0.8)' : '0 0 8px rgba(16,185,129,0.7)'}}>دردشة</span>
             </button>
 
             {/* Speaker */}
             <button
               onClick={() => setIsSpeakerOn(v => !v)}
-              className={`flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] transition-all duration-200 active:scale-95 hover:scale-[1.03] ${isSpeakerOn ? 'bg-teal-500/20 text-teal-300 hover:bg-teal-500/25' : 'bg-red-500/10 text-red-400 hover:bg-red-500/15'}`}
+              className="flex flex-col items-center gap-1.5 pt-2.5 pb-2 rounded-2xl transition-all duration-200 active:scale-95 hover:scale-[1.04]"
+              style={{ background: isSpeakerOn ? 'rgba(20,184,166,0.18)' : 'rgba(239,68,68,0.12)', border: isSpeakerOn ? '1px solid rgba(20,184,166,0.5)' : '1px solid rgba(239,68,68,0.35)', boxShadow: isSpeakerOn ? '0 0 14px rgba(20,184,166,0.3), inset 0 1px 0 rgba(255,255,255,0.07)' : '0 0 12px rgba(239,68,68,0.2), inset 0 1px 0 rgba(255,255,255,0.04)' }}
             >
-              <div className={`w-11 h-11 rounded-[14px] flex items-center justify-center shadow-md ${isSpeakerOn ? 'bg-gradient-to-br from-teal-500 to-cyan-600 shadow-teal-900/40' : 'bg-gradient-to-br from-red-500 to-red-700 shadow-red-900/40'}`}>
-                {isSpeakerOn ? <Volume2 className="w-[18px] h-[18px] text-white" /> : <VolumeX className="w-[18px] h-[18px] text-white" />}
+              <div
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center"
+                style={{ background: isSpeakerOn ? 'linear-gradient(135deg,#14b8a6,#0891b2)' : 'linear-gradient(135deg,#ef4444,#be123c)', boxShadow: isSpeakerOn ? '0 0 20px rgba(20,184,166,0.7), 0 4px 12px rgba(20,184,166,0.4)' : '0 0 18px rgba(239,68,68,0.65), 0 4px 12px rgba(239,68,68,0.35)' }}
+              >
+                {isSpeakerOn ? <Volume2 className="w-[18px] h-[18px] text-white drop-shadow" /> : <VolumeX className="w-[18px] h-[18px] text-white drop-shadow" />}
               </div>
-              <span className="text-[10.5px] font-bold tracking-wide">{isSpeakerOn ? 'صوت' : 'صامت'}</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color: isSpeakerOn ? '#5eead4' : '#fca5a5', textShadow: isSpeakerOn ? '0 0 8px rgba(20,184,166,0.8)' : '0 0 8px rgba(239,68,68,0.7)'}}>{isSpeakerOn ? 'صوت' : 'صامت'}</span>
             </button>
 
             {/* Camera */}
             <button
               onClick={toggleVideo}
-              className={`flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] transition-all duration-200 active:scale-95 hover:scale-[1.03] ${isVideoOn ? 'bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/25' : 'bg-red-500/10 text-red-400 hover:bg-red-500/15'}`}
+              className="flex flex-col items-center gap-1.5 pt-2.5 pb-2 rounded-2xl transition-all duration-200 active:scale-95 hover:scale-[1.04]"
+              style={{ background: isVideoOn ? 'rgba(139,92,246,0.18)' : 'rgba(239,68,68,0.12)', border: isVideoOn ? '1px solid rgba(139,92,246,0.5)' : '1px solid rgba(239,68,68,0.35)', boxShadow: isVideoOn ? '0 0 14px rgba(139,92,246,0.3), inset 0 1px 0 rgba(255,255,255,0.07)' : '0 0 12px rgba(239,68,68,0.2), inset 0 1px 0 rgba(255,255,255,0.04)' }}
             >
-              <div className={`w-11 h-11 rounded-[14px] flex items-center justify-center shadow-md ${isVideoOn ? 'bg-gradient-to-br from-indigo-500 to-violet-700 shadow-violet-900/40' : 'bg-gradient-to-br from-red-500 to-red-700 shadow-red-900/40'}`}>
-                {isVideoOn ? <Video className="w-[18px] h-[18px] text-white" /> : <VideoOff className="w-[18px] h-[18px] text-white" />}
+              <div
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center"
+                style={{ background: isVideoOn ? 'linear-gradient(135deg,#8b5cf6,#6d28d9)' : 'linear-gradient(135deg,#ef4444,#be123c)', boxShadow: isVideoOn ? '0 0 20px rgba(139,92,246,0.75), 0 4px 12px rgba(139,92,246,0.4)' : '0 0 18px rgba(239,68,68,0.65), 0 4px 12px rgba(239,68,68,0.35)' }}
+              >
+                {isVideoOn ? <Video className="w-[18px] h-[18px] text-white drop-shadow" /> : <VideoOff className="w-[18px] h-[18px] text-white drop-shadow" />}
               </div>
-              <span className="text-[10.5px] font-bold tracking-wide">{isVideoOn ? 'كاميرا' : 'مطفأة'}</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color: isVideoOn ? '#c4b5fd' : '#fca5a5', textShadow: isVideoOn ? '0 0 8px rgba(139,92,246,0.8)' : '0 0 8px rgba(239,68,68,0.7)'}}>{isVideoOn ? 'كاميرا' : 'مطفأة'}</span>
             </button>
 
             {/* Mic */}
             <button
               onClick={toggleMic}
-              className={`flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] transition-all duration-200 active:scale-95 hover:scale-[1.03] ${isMicOn ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/25' : 'bg-red-500/10 text-red-400 hover:bg-red-500/15'}`}
+              className="flex flex-col items-center gap-1.5 pt-2.5 pb-2 rounded-2xl transition-all duration-200 active:scale-95 hover:scale-[1.04]"
+              style={{ background: isMicOn ? 'rgba(59,130,246,0.18)' : 'rgba(239,68,68,0.12)', border: isMicOn ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(239,68,68,0.35)', boxShadow: isMicOn ? '0 0 14px rgba(59,130,246,0.3), inset 0 1px 0 rgba(255,255,255,0.07)' : '0 0 12px rgba(239,68,68,0.2), inset 0 1px 0 rgba(255,255,255,0.04)' }}
             >
-              <div className={`w-11 h-11 rounded-[14px] flex items-center justify-center shadow-md ${isMicOn ? 'bg-gradient-to-br from-blue-500 to-blue-700 shadow-blue-900/40' : 'bg-gradient-to-br from-red-500 to-red-700 shadow-red-900/40'}`}>
-                {isMicOn ? <Mic className="w-[18px] h-[18px] text-white" /> : <MicOff className="w-[18px] h-[18px] text-white" />}
+              <div
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center"
+                style={{ background: isMicOn ? 'linear-gradient(135deg,#3b82f6,#1d4ed8)' : 'linear-gradient(135deg,#ef4444,#be123c)', boxShadow: isMicOn ? '0 0 20px rgba(59,130,246,0.75), 0 4px 12px rgba(59,130,246,0.4)' : '0 0 18px rgba(239,68,68,0.65), 0 4px 12px rgba(239,68,68,0.35)' }}
+              >
+                {isMicOn ? <Mic className="w-[18px] h-[18px] text-white drop-shadow" /> : <MicOff className="w-[18px] h-[18px] text-white drop-shadow" />}
               </div>
-              <span className="text-[10.5px] font-bold tracking-wide">{isMicOn ? 'ميكروفون' : 'مكتوم'}</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color: isMicOn ? '#93c5fd' : '#fca5a5', textShadow: isMicOn ? '0 0 8px rgba(59,130,246,0.8)' : '0 0 8px rgba(239,68,68,0.7)'}}>{isMicOn ? 'ميكروفون' : 'مكتوم'}</span>
             </button>
           </div>
 
           {/* ── Row 2 : أصدقاء · المتجر · الخلفية · هدية ── */}
-          <div className="grid grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-4 gap-2">
 
             {/* Friends */}
             <button
               onClick={() => { setShowFriends(v => !v); refetchUnread(); }}
-              className="relative flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] bg-white/[0.07] text-red-300 transition-all duration-200 active:scale-95 hover:scale-[1.03] hover:bg-white/[0.11]"
+              className="relative flex flex-col items-center gap-1.5 pt-2.5 pb-2 rounded-2xl transition-all duration-200 active:scale-95 hover:scale-[1.04]"
+              style={{ background: 'rgba(244,63,94,0.13)', border: '1px solid rgba(244,63,94,0.35)', boxShadow: '0 0 12px rgba(244,63,94,0.2), inset 0 1px 0 rgba(255,255,255,0.06)' }}
             >
-              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center bg-gradient-to-br from-red-500 to-pink-600 shadow-md shadow-red-900/40 relative">
-                <Heart className="w-[18px] h-[18px] text-white" />
+              <div
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center relative"
+                style={{ background: 'linear-gradient(135deg,#f43f5e,#e11d48)', boxShadow: '0 0 20px rgba(244,63,94,0.7), 0 4px 12px rgba(244,63,94,0.4)' }}
+              >
+                <Heart className="w-[18px] h-[18px] text-white drop-shadow" />
                 {unreadDmCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-gray-900 text-[9px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-black border-2 border-gray-900 px-0.5">
+                  <span className="absolute -top-1.5 -right-1.5 bg-yellow-400 text-gray-900 text-[9px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-black border-2 border-gray-900 px-0.5" style={{boxShadow:'0 0 8px rgba(234,179,8,0.9)'}}>
                     {unreadDmCount > 99 ? '99+' : unreadDmCount}
                   </span>
                 )}
               </div>
-              <span className="text-[10.5px] font-bold tracking-wide">أصدقاء</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color:'#fda4af', textShadow:'0 0 8px rgba(244,63,94,0.8)'}}>أصدقاء</span>
             </button>
 
             {/* Store */}
             <button
               onClick={() => { sessionStorage.setItem('chat_auto_start', 'true'); setLocation('/store?from=chat'); }}
-              className="flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] bg-white/[0.07] text-fuchsia-300 transition-all duration-200 active:scale-95 hover:scale-[1.03] hover:bg-white/[0.11]"
+              className="flex flex-col items-center gap-1.5 pt-2.5 pb-2 rounded-2xl transition-all duration-200 active:scale-95 hover:scale-[1.04]"
+              style={{ background: 'rgba(217,70,239,0.13)', border: '1px solid rgba(217,70,239,0.35)', boxShadow: '0 0 12px rgba(217,70,239,0.2), inset 0 1px 0 rgba(255,255,255,0.06)' }}
             >
-              <div className="w-11 h-11 rounded-[14px] flex items-center justify-center bg-gradient-to-br from-fuchsia-500 to-pink-700 shadow-md shadow-fuchsia-900/40">
-                <ShoppingBag className="w-[18px] h-[18px] text-white" />
+              <div
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg,#d946ef,#a21caf)', boxShadow: '0 0 20px rgba(217,70,239,0.7), 0 4px 12px rgba(217,70,239,0.4)' }}
+              >
+                <ShoppingBag className="w-[18px] h-[18px] text-white drop-shadow" />
               </div>
-              <span className="text-[10.5px] font-bold tracking-wide">المتجر</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color:'#e879f9', textShadow:'0 0 8px rgba(217,70,239,0.8)'}}>المتجر</span>
             </button>
 
-            {/* Camera Switch — Premium or Admin only */}
+            {/* Camera Switch */}
             {(() => {
               const canSwitch = (user as any)?.isPremium || (user as any)?.role === 'admin';
               return (
                 <button
                   onClick={toggleCamera}
-                  className={`flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] transition-all duration-200 active:scale-95 ${canSwitch ? 'bg-amber-500/15 text-yellow-300 hover:scale-[1.03] hover:bg-amber-500/22' : 'bg-white/[0.04] text-white/35'}`}
+                  className="flex flex-col items-center gap-1.5 pt-2.5 pb-2 rounded-2xl transition-all duration-200 active:scale-95"
+                  style={{ background: canSwitch ? 'rgba(234,179,8,0.13)' : 'rgba(255,255,255,0.04)', border: canSwitch ? '1px solid rgba(234,179,8,0.4)' : '1px solid rgba(255,255,255,0.08)', boxShadow: canSwitch ? '0 0 12px rgba(234,179,8,0.22), inset 0 1px 0 rgba(255,255,255,0.07)' : 'none', opacity: canSwitch ? 1 : 0.45 }}
                 >
-                  <div className={`w-11 h-11 rounded-[14px] flex items-center justify-center shadow-md relative ${canSwitch ? 'bg-gradient-to-br from-yellow-400 to-amber-600 shadow-amber-900/40' : 'bg-gradient-to-br from-slate-600 to-slate-700'}`}>
-                    <SwitchCamera className={`w-[18px] h-[18px] ${canSwitch ? 'text-gray-900' : 'text-white/40'}`} />
-                    {!canSwitch && <Lock className="w-2.5 h-2.5 text-white/50 absolute top-1 right-1" />}
+                  <div
+                    className="w-11 h-11 rounded-[14px] flex items-center justify-center relative"
+                    style={{ background: canSwitch ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'linear-gradient(135deg,#475569,#334155)', boxShadow: canSwitch ? '0 0 20px rgba(234,179,8,0.7), 0 4px 12px rgba(234,179,8,0.4)' : 'none' }}
+                  >
+                    <SwitchCamera className={`w-[18px] h-[18px] drop-shadow ${canSwitch ? 'text-gray-900' : 'text-white/50'}`} />
+                    {!canSwitch && <Lock className="w-2.5 h-2.5 text-white/60 absolute top-1 right-1" />}
                   </div>
-                  <span className="text-[10.5px] font-bold tracking-wide leading-tight text-center">
+                  <span className="text-[10px] font-bold tracking-wide leading-tight text-center" style={{color: canSwitch ? '#fde68a' : 'rgba(255,255,255,0.3)', textShadow: canSwitch ? '0 0 8px rgba(234,179,8,0.8)' : 'none'}}>
                     {canSwitch ? (facingMode === 'user' ? 'خلفية' : 'أمامية') : 'تبديل 🔒'}
                   </span>
                 </button>
@@ -1481,17 +1490,21 @@ export default function ChatRoom() {
             <button
               onClick={() => status === 'matched' ? setShowGifts(v => !v) : undefined}
               disabled={status !== 'matched'}
-              className={`flex flex-col items-center gap-2 pt-3 pb-2.5 rounded-[18px] transition-all duration-200 active:scale-95 ${status === 'matched' ? 'bg-orange-500/15 text-orange-300 hover:scale-[1.03] hover:bg-orange-500/22' : 'bg-white/[0.04] text-white/25 cursor-not-allowed'}`}
+              className="flex flex-col items-center gap-1.5 pt-2.5 pb-2 rounded-2xl transition-all duration-200 active:scale-95"
+              style={{ background: status === 'matched' ? 'rgba(249,115,22,0.13)' : 'rgba(255,255,255,0.04)', border: status === 'matched' ? '1px solid rgba(249,115,22,0.4)' : '1px solid rgba(255,255,255,0.07)', boxShadow: status === 'matched' ? '0 0 12px rgba(249,115,22,0.22), inset 0 1px 0 rgba(255,255,255,0.07)' : 'none', opacity: status === 'matched' ? 1 : 0.4, cursor: status === 'matched' ? 'pointer' : 'not-allowed' }}
             >
-              <div className={`w-11 h-11 rounded-[14px] flex items-center justify-center shadow-md ${status === 'matched' ? 'bg-gradient-to-br from-orange-400 to-pink-600 shadow-orange-900/40' : 'bg-gradient-to-br from-slate-600 to-slate-700'}`}>
-                <Gift className="w-[18px] h-[18px] text-white" />
+              <div
+                className="w-11 h-11 rounded-[14px] flex items-center justify-center"
+                style={{ background: status === 'matched' ? 'linear-gradient(135deg,#f97316,#db2777)' : 'linear-gradient(135deg,#475569,#334155)', boxShadow: status === 'matched' ? '0 0 20px rgba(249,115,22,0.7), 0 4px 12px rgba(249,115,22,0.4)' : 'none' }}
+              >
+                <Gift className="w-[18px] h-[18px] text-white drop-shadow" />
               </div>
-              <span className="text-[10.5px] font-bold tracking-wide">هدية</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color: status === 'matched' ? '#fdba74' : 'rgba(255,255,255,0.25)', textShadow: status === 'matched' ? '0 0 8px rgba(249,115,22,0.8)' : 'none'}}>هدية</span>
             </button>
           </div>
 
-          {/* ── Row 3 : ابدأ مباشرة · إبلاغ ─────────────── */}
-          <div className="grid grid-cols-2 gap-2.5 pb-1">
+          {/* ── Row 3 : ابدأ مباشرة · الرادار ─────────────── */}
+          <div className="grid grid-cols-2 gap-2 pb-1">
 
             {/* Quick start / Stop */}
             {(() => {
@@ -1507,15 +1520,17 @@ export default function ChatRoom() {
                       startSession('any', 'any');
                     }
                   }}
-                  className={`flex items-center justify-center gap-2.5 py-3.5 rounded-[18px] font-bold text-[13px] tracking-wide transition-all duration-200 active:scale-95 shadow-lg ${
-                    isSearching
-                      ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-900/40 text-white animate-pulse hover:from-red-400 hover:to-rose-500'
-                      : 'bg-gradient-to-r from-green-500 to-emerald-600 shadow-green-900/40 text-white hover:from-green-400 hover:to-emerald-500 hover:scale-[1.02]'
-                  }`}
+                  className={`flex items-center justify-center gap-2.5 py-3.5 rounded-2xl font-bold text-[13px] tracking-wide transition-all duration-200 active:scale-95 hover:scale-[1.02] ${isSearching ? 'animate-pulse' : ''}`}
+                  style={{
+                    background: isSearching ? 'linear-gradient(135deg,#ef4444,#be123c)' : 'linear-gradient(135deg,#22c55e,#16a34a)',
+                    boxShadow: isSearching ? '0 0 24px rgba(239,68,68,0.6), 0 4px 16px rgba(239,68,68,0.4)' : '0 0 24px rgba(34,197,94,0.6), 0 4px 16px rgba(34,197,94,0.4)',
+                    border: isSearching ? '1px solid rgba(239,68,68,0.5)' : '1px solid rgba(34,197,94,0.5)',
+                    color: 'white',
+                  }}
                 >
                   {isSearching
-                    ? <Square className="w-4 h-4 fill-white text-white" />
-                    : <Play   className="w-4 h-4 fill-white text-white" />
+                    ? <Square className="w-4 h-4 fill-white text-white drop-shadow" />
+                    : <Play   className="w-4 h-4 fill-white text-white drop-shadow" />
                   }
                   {isSearching ? 'إيقاف البحث' : 'ابدأ مباشرة'}
                 </button>
@@ -1533,9 +1548,15 @@ export default function ChatRoom() {
                 }
                 setStatus('setup');
               }}
-              className={`flex items-center justify-center gap-2.5 py-3.5 rounded-[18px] transition-all duration-200 active:scale-95 hover:scale-[1.02] font-bold text-[13px] tracking-wide ${filterCountry !== 'any' || filterGender !== 'any' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-white/[0.07] text-purple-300'}`}
+              className="flex items-center justify-center gap-2.5 py-3.5 rounded-2xl font-bold text-[13px] tracking-wide transition-all duration-200 active:scale-95 hover:scale-[1.02]"
+              style={{
+                background: filterCountry !== 'any' || filterGender !== 'any' ? 'linear-gradient(135deg,#a855f7,#7c3aed)' : 'rgba(168,85,247,0.13)',
+                border: '1px solid rgba(168,85,247,0.45)',
+                boxShadow: filterCountry !== 'any' || filterGender !== 'any' ? '0 0 24px rgba(168,85,247,0.6), 0 4px 16px rgba(168,85,247,0.4)' : '0 0 14px rgba(168,85,247,0.25)',
+                color: '#e9d5ff',
+              }}
             >
-              <Zap className="w-4 h-4" />
+              <Zap className="w-4 h-4 drop-shadow" />
               الرادار
             </button>
           </div>
@@ -1551,18 +1572,20 @@ export default function ChatRoom() {
           <button
             onClick={handleNext}
             disabled={status === 'connecting' || status === 'waiting' || status === 'confirming'}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-[18px] bg-gradient-to-r from-amber-400 to-yellow-400 text-gray-900 font-bold text-sm tracking-wide shadow-md shadow-amber-900/25 hover:brightness-105 hover:shadow-amber-900/35 disabled:opacity-35 disabled:cursor-not-allowed active:scale-[0.97] transition-all duration-150"
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm tracking-wide transition-all duration-150 active:scale-[0.97] hover:scale-[1.02] disabled:opacity-35 disabled:cursor-not-allowed"
+            style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#1c1917', boxShadow: '0 0 22px rgba(245,158,11,0.6), 0 4px 14px rgba(245,158,11,0.4)', border: '1px solid rgba(245,158,11,0.5)' }}
           >
-            <SkipForward className="w-4 h-4 flex-shrink-0" />
+            <SkipForward className="w-4 h-4 flex-shrink-0 drop-shadow" />
             التالي — شخص جديد
           </button>
 
           {/* End Call */}
           <button
             onClick={handleEnd}
-            className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-[18px] bg-gradient-to-br from-red-500 to-rose-600 text-white font-bold text-sm shadow-md shadow-red-900/30 hover:brightness-105 active:scale-[0.97] transition-all duration-150"
+            className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl font-bold text-sm transition-all duration-150 active:scale-[0.97] hover:scale-[1.02]"
+            style={{ background: 'linear-gradient(135deg,#ef4444,#be123c)', color: 'white', boxShadow: '0 0 22px rgba(239,68,68,0.6), 0 4px 14px rgba(239,68,68,0.4)', border: '1px solid rgba(239,68,68,0.5)' }}
           >
-            <PhoneOff className="w-4 h-4 flex-shrink-0" />
+            <PhoneOff className="w-4 h-4 flex-shrink-0 drop-shadow" />
             <span className="tracking-wide">إنهاء</span>
           </button>
         </div>
