@@ -1261,14 +1261,8 @@ export default function ChatRoom() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-black/30 pointer-events-none" />
 
                     {/* CTA content */}
-                    <div className="relative z-10 text-center px-4 flex flex-col items-center gap-2">
-                      {/* Animated ring + play icon */}
-                      <div className="relative mb-1">
-                        <span className="absolute inset-0 rounded-full bg-green-400/40 animate-ping" />
-                        <div className="relative w-16 h-16 rounded-full bg-green-500/30 border-2 border-green-400 flex items-center justify-center backdrop-blur-sm shadow-lg shadow-green-500/30">
-                          <Play className="w-7 h-7 text-green-400 fill-green-400 ml-0.5" />
-                        </div>
-                      </div>
+                    <div className="relative z-10 text-center px-4 flex flex-col items-center gap-2 mt-auto mb-6">
+
 
                       <p className="text-white font-bold text-base drop-shadow-lg leading-snug">
                         اضغط <span className="text-green-400">ابدأ مباشرة</span> للبدء
