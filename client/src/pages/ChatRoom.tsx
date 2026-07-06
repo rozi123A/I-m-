@@ -475,6 +475,16 @@ export default function ChatRoom() {
         setNotif(null);
         break;
       }
+      case 'accept-match': {
+        // Partner already accepted — if we are still on the confirming screen, 
+        // it means we haven't clicked accept yet, but we should prepare the PC.
+        if (pendingMatchRef.current) {
+          // We don't auto-finalize here to let the user click Accept, 
+          // but we ensure the PC is ready if they do.
+          createPC();
+        }
+        break;
+      }
       case 'offer': {
         // Partner already accepted and started the connection — auto-confirm our side too.
         if (pendingMatchRef.current) finalizeMatch(pendingMatchRef.current);
@@ -799,13 +809,17 @@ export default function ChatRoom() {
 
     // Deduction already happened at startSession — proceed directly
     finalizeMatch(match);
-    const pc = createPC();
+    
+    // Notify the other peer that we have accepted
+    signal('accept-match');
+
+    const pc = pcRef.current || createPC();
     if (match.role === 'caller') {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       signal('offer', offer);
     }
-  }, [finalizeMatch, createPC, signal, handleRejectMatch]);
+  }, [finalizeMatch, createPC, signal]);
   const handleEnd   = () => {
     destroyedRef.current = true;
     esRef.current?.close();
