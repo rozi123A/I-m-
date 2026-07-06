@@ -222,6 +222,31 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    /** Revoke VIP from a user (Admin only) */
+    revokeVip: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { getDb } = await import("./db");
+        const { users } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        await db.update(users).set({ isPremium: false }).where(eq(users.id, input.userId));
+        return { success: true };
+      }),
+
+    /** Reset all non-admin VIPs (Admin only) */
+    resetAllVips: adminProcedure
+      .mutation(async () => {
+        const { getDb } = await import("./db");
+        const { users } = await import("../drizzle/schema");
+        const { and, eq, ne } = await import("drizzle-orm");
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+        await db.update(users).set({ isPremium: false }).where(and(eq(users.isPremium, true), ne(users.role, 'admin')));
+        return { success: true };
+      }),
+
     /** Deduct credits and record the gift (relay to peer via signal is done client-side) */
     spend: protectedProcedure
       .input(z.object({

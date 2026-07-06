@@ -300,6 +300,44 @@ export default function Admin() {
   );
 }
 
+function ResetVipsButton() {
+  const resetMutation = trpc.gifts.resetAllVips.useMutation({
+    onSuccess: () => toast.success("تم سحب VIP من جميع المستخدمين بنجاح"),
+    onError: (e) => toast.error(`فشل العملية: ${e.message}`),
+  });
+
+  return (
+    <button
+      onClick={() => confirm("هل أنت متأكد من سحب VIP من جميع المستخدمين؟ (لن يتم المساس بالأدمن)") && resetMutation.mutate()}
+      disabled={resetMutation.isPending}
+      style={{
+        backgroundColor: '#451a1a', color: '#fca5a5', border: '1px solid #991b1b',
+        borderRadius: '8px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer'
+      }}
+    >
+      {resetMutation.isPending ? "جاري السحب..." : "سحب VIP من الكل"}
+    </button>
+  );
+}
+
+function RevokeUserVipButton({ userId }: { userId: number }) {
+  const revokeMutation = trpc.gifts.revokeVip.useMutation({
+    onSuccess: () => toast.success("تم سحب VIP من المستخدم"),
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); revokeMutation.mutate({ userId }); }}
+      disabled={revokeMutation.isPending}
+      title="سحب VIP"
+      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0 }}
+    >
+      <X style={{ width: '12px', height: '12px' }} />
+    </button>
+  );
+}
+
 // ── Stats Tab Component ───────────────────────────────────────────────────
 function StatsTab() {
   const { data: stats, isLoading, refetch } = trpc.admin.countryStats.useQuery();
@@ -329,7 +367,10 @@ function StatsTab() {
       <div style={{ backgroundColor: '#111827', border: '1px solid #1e293b', borderRadius: '20px', padding: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>المستخدمين حسب الدولة</h3>
-          <button onClick={() => refetch()} style={{ background: 'none', border: 'none', color: '#7c3aed', cursor: 'pointer' }}><RefreshCw style={{ width: '16px' }} /></button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <ResetVipsButton />
+            <button onClick={() => refetch()} style={{ background: 'none', border: 'none', color: '#7c3aed', cursor: 'pointer' }}><RefreshCw style={{ width: '16px' }} /></button>
+          </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {stats?.map(s => (
@@ -351,9 +392,14 @@ function StatsTab() {
                 <p style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>{u.name}</p>
                 <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>{u.gender} • {u.age} سنة • {u.country}</p>
               </div>
-              <div style={{ textAlign: 'left' }}>
+              <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                 <p style={{ margin: 0, fontSize: '10px', color: '#4b5563' }}>{timeAgo(u.createdAt)}</p>
-                {u.isPremium && <Crown style={{ width: '12px', color: '#fbbf24' }} />}
+                {u.isPremium && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Crown style={{ width: '12px', color: '#fbbf24' }} />
+                    {u.role !== 'admin' && <RevokeUserVipButton userId={u.id} />}
+                  </div>
+                )}
               </div>
             </div>
           ))}
