@@ -13,31 +13,33 @@ interface SecurityPoint {
   description: string;
 }
 
-const securityPoints: SecurityPoint[] = [
-  {
-    icon: <Lock className="w-8 h-8" />,
-    title: "حماية الخصوصية",
-    description: "لا نطلب أي معلومات شخصية للتسجيل، ولا نسجل أو نخزن مكالمات الفيديو أو الصوت أو الدردشات النصية. الاتصال مباشر (P2P) بين جهازك وجهاز شريكك.",
-  },
-  {
-    icon: <Shield className="w-8 h-8" />,
-    title: "إجراءات الأمان",
-    description: "جميع الاتصالات مشفرة بالكامل، ونستخدم أنظمة ذكاء اصطناعي للتحقق من هوية المستخدمين. نوفر أدوات للإبلاغ عن أي سلوك مسيء.",
-  },
-  {
-    icon: <UserCheck className="w-8 h-8" />,
-    title: "بيئة مجتمعية آمنة",
-    description: "نسعى لبناء مجتمع إيجابي ومحترم. نشجع على الاحترام المتبادل والإبلاغ عن الانتهاكات وعدم مشاركة المعلومات الشخصية.",
-  },
-  {
-    icon: <Lightbulb className="w-8 h-8" />,
-    title: "نصائح للحفاظ على أمانك",
-    description: "لا تشارك معلومات شخصية، كن حذراً من الروابط المشبوهة، استخدم اتصال إنترنت آمن، وحافظ على تحديث متصفحك دائماً.",
-  },
-];
-
 export default function Security() {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
+  const t = translate;
+
+  const securityPoints: SecurityPoint[] = [
+    {
+      icon: <Lock className="w-8 h-8" />,
+      title: t('security.privacy_title') || "حماية الخصوصية",
+      description: t('security.privacy_desc') || "لا نطلب أي معلومات شخصية للتسجيل، ولا نسجل أو نخزن مكالمات الفيديو أو الصوت.",
+    },
+    {
+      icon: <Shield className="w-8 h-8" />,
+      title: t('security.measures_title') || "إجراءات الأمان",
+      description: t('security.measures_desc') || "جميع الاتصالات مشفرة بالكامل، ونستخدم أنظمة ذكاء اصطناعي للتحقق من الهوية.",
+    },
+    {
+      icon: <UserCheck className="w-8 h-8" />,
+      title: t('security.community_title') || "بيئة مجتمعية آمنة",
+      description: t('security.community_desc') || "نسعى لبناء مجتمع إيجابي ومحترم. نشجع على الاحترام المتبادل.",
+    },
+    {
+      icon: <Lightbulb className="w-8 h-8" />,
+      title: t('security.tips_title') || "نصائح للأمان",
+      description: t('security.tips_desc') || "لا تشارك معلومات شخصية، كن حذراً من الروابط المشبوهة، واستخدم اتصالاً آمناً.",
+    },
+  ];
+
   return (
     <section id="security" className="py-20 bg-white">
       <div className="container mx-auto px-4">

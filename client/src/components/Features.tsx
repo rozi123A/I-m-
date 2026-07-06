@@ -14,47 +14,49 @@ interface Feature {
   gradient: string;
 }
 
-const features: Feature[] = [
-  {
-    icon: <Zap className="w-8 h-8" />,
-    title: "اتصالات فورية وعالية الجودة",
-    description: "استمتع باتصالات فيديو وصوت فائقة الوضوح مع أشخاص حقيقيين من جميع أنحاء العالم. بفضل تقنية WebRTC المتقدمة، يتم إنشاء الاتصال في ثوانٍ معدودة، مما يضمن تجربة سلسة وخالية من التأخير.",
-    gradient: "from-purple-600 to-blue-600",
-  },
-  {
-    icon: <Shield className="w-8 h-8" />,
-    title: "خصوصية وأمان لا مثيل لهما",
-    description: "في ConnectLive، خصوصيتك هي أولويتنا القصوى. نحن نضمن: اتصالات مجهولة تماماً، حماية البيانات، تحقق من الملفات الشخصية.",
-    gradient: "from-pink-600 to-purple-600",
-  },
-  {
-    icon: <Lock className="w-8 h-8" />,
-    title: "تحكم كامل في تجربتك",
-    description: "تمنحك ConnectLive التحكم الكامل في مكالماتك: تشغيل/إيقاف الميكروفون والكاميرا، الدردشة النصية، الانتقال السريع.",
-    gradient: "from-cyan-600 to-blue-600",
-  },
-  {
-    icon: <Users className="w-8 h-8" />,
-    title: "مجتمع عالمي متنوع",
-    description: "تواصل مع مجتمع واسع ومتنوع من المستخدمين من مختلف الثقافات والخلفيات. اكتشف آفاقاً جديدة، وتعرف على أصدقاء جدد، وشارك الأفكار مع أشخاص من جميع أنحاء العالم.",
-    gradient: "from-orange-600 to-pink-600",
-  },
-  {
-    icon: <Smartphone className="w-8 h-8" />,
-    title: "مرونة الوصول عبر الأجهزة",
-    description: "استخدم ConnectLive بسلاسة على أي جهاز. سواء كنت تفضل التصفح عبر الويب أو استخدام التطبيق، فإن منصتنا متوافقة تماماً مع جميع الأجهزة، مما يضمن لك تجربة متسقة ومريحة أينما كنت.",
-    gradient: "from-green-600 to-cyan-600",
-  },
-  {
-    icon: <Award className="w-8 h-8" />,
-    title: "نظام هدايا وأصدقاء متطور",
-    description: "تواصل مع من تحب بشكل أعمق! أرسل هدايا افتراضية مميزة، أضف أصدقاءك الجدد، وابقَ على اتصال معهم عبر نظام إشعارات دائم وموثوق.",
-    gradient: "from-yellow-600 to-orange-600",
-  },
-];
-
 export default function Features() {
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
+  const t = translate;
+
+  const features: Feature[] = [
+    {
+      icon: <Zap className="w-8 h-8" />,
+      title: t('features.instant_title') || "اتصالات فورية وعالية الجودة",
+      description: t('features.instant_desc') || "استمتع باتصالات فيديو وصوت فائقة الوضوح مع أشخاص حقيقيين من جميع أنحاء العالم.",
+      gradient: "from-purple-600 to-blue-600",
+    },
+    {
+      icon: <Shield className="w-8 h-8" />,
+      title: t('features.privacy_title') || "خصوصية وأمان لا مثيل لهما",
+      description: t('features.privacy_desc') || "في ConnectLive، خصوصيتك هي أولويتنا القصوى. نحن نضمن اتصالات مجهولة تماماً.",
+      gradient: "from-pink-600 to-purple-600",
+    },
+    {
+      icon: <Lock className="w-8 h-8" />,
+      title: t('features.control_title') || "تحكم كامل في تجربتك",
+      description: t('features.control_desc') || "تمنحك ConnectLive التحكم الكامل في مكالماتك: تشغيل/إيقاف الميكروفون والكاميرا.",
+      gradient: "from-cyan-600 to-blue-600",
+    },
+    {
+      icon: <Users className="w-8 h-8" />,
+      title: t('features.community_title') || "مجتمع عالمي متنوع",
+      description: t('features.community_desc') || "تواصل مع مجتمع واسع ومتنوع من المستخدمين من مختلف الثقافات والخلفيات.",
+      gradient: "from-orange-600 to-pink-600",
+    },
+    {
+      icon: <Smartphone className="w-8 h-8" />,
+      title: t('features.flexibility_title') || "مرونة الوصول عبر الأجهزة",
+      description: t('features.flexibility_desc') || "استخدم ConnectLive بسلاسة على أي جهاز، سواء كنت تفضل الويب أو التطبيق.",
+      gradient: "from-green-600 to-cyan-600",
+    },
+    {
+      icon: <Award className="w-8 h-8" />,
+      title: t('features.gifts_title') || "نظام هدايا وأصدقاء متطور",
+      description: t('features.gifts_desc') || "تواصل مع من تحب بشكل أعمق! أرسل هدايا افتراضية مميزة وأضف أصدقاءك الجدد.",
+      gradient: "from-yellow-600 to-orange-600",
+    },
+  ];
+
   return (
     <section id="features" className="py-20 bg-white">
       <div className="container mx-auto px-4">
