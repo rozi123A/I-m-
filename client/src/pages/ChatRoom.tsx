@@ -1318,7 +1318,7 @@ export default function ChatRoom() {
         {showChat && (
           <div className="flex flex-col bg-gray-800/80 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl w-full md:w-72" style={{ maxHeight: 400 }}>
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-              <span className="text-white font-semibold text-sm">الدردشة الكتابية</span>
+              <span className="text-white font-semibold text-sm">{t('chat.chat_btn')}</span>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
@@ -1350,7 +1350,7 @@ export default function ChatRoom() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-0">
-              {messages.length === 0 && <p className="text-white/30 text-xs text-center mt-4">لا توجد رسائل بعد</p>}
+              {messages.length === 0 && <p className="text-white/30 text-xs text-center mt-4">{t('chat.no_messages') || 'No messages yet'}</p>}
               {messages.map((m, i) => (
                 <PremiumMessageBubble
                   key={i}
@@ -1366,7 +1366,7 @@ export default function ChatRoom() {
             <div className="p-3 border-t border-white/10 flex gap-2">
               <input type="text" value={inputText} onChange={e => setInputText(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendText()}
-                placeholder="اكتب رسالة..." dir="rtl"
+                placeholder={t('chat.type_msg') || 'Type a message...'} dir={isRTL ? 'rtl' : 'ltr'}
                 className="flex-1 bg-white/10 border border-white/20 text-white placeholder:text-white/30 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-purple-400"
               />
               <button onClick={sendText} className="bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-xl px-3 hover:opacity-90">
@@ -1403,7 +1403,7 @@ export default function ChatRoom() {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-bold tracking-wide" style={{color: showChat ? '#67e8f9' : '#6ee7b7', textShadow: showChat ? '0 0 8px rgba(6,182,212,0.8)' : '0 0 8px rgba(16,185,129,0.7)'}}>دردشة</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color: showChat ? '#67e8f9' : '#6ee7b7', textShadow: showChat ? '0 0 8px rgba(6,182,212,0.8)' : '0 0 8px rgba(16,185,129,0.7)'}}>{t('chat.chat_btn')}</span>
             </button>
 
             {/* Speaker */}
@@ -1418,7 +1418,7 @@ export default function ChatRoom() {
               >
                 {isSpeakerOn ? <Volume2 className="w-[18px] h-[18px] text-white drop-shadow" /> : <VolumeX className="w-[18px] h-[18px] text-white drop-shadow" />}
               </div>
-              <span className="text-[10px] font-bold tracking-wide" style={{color: isSpeakerOn ? '#5eead4' : '#fca5a5', textShadow: isSpeakerOn ? '0 0 8px rgba(20,184,166,0.8)' : '0 0 8px rgba(239,68,68,0.7)'}}>{isSpeakerOn ? 'صوت' : 'صامت'}</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color: isSpeakerOn ? '#5eead4' : '#fca5a5', textShadow: isSpeakerOn ? '0 0 8px rgba(20,184,166,0.8)' : '0 0 8px rgba(239,68,68,0.7)'}}>{isSpeakerOn ? t('chat.audio') : (t('chat.mute') || 'Mute')}</span>
             </button>
 
             {/* Camera */}
@@ -1433,7 +1433,7 @@ export default function ChatRoom() {
               >
                 {isVideoOn ? <Video className="w-[18px] h-[18px] text-white drop-shadow" /> : <VideoOff className="w-[18px] h-[18px] text-white drop-shadow" />}
               </div>
-              <span className="text-[10px] font-bold tracking-wide" style={{color: isVideoOn ? '#c4b5fd' : '#fca5a5', textShadow: isVideoOn ? '0 0 8px rgba(139,92,246,0.8)' : '0 0 8px rgba(239,68,68,0.7)'}}>{isVideoOn ? 'كاميرا' : 'مطفأة'}</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color: isVideoOn ? '#c4b5fd' : '#fca5a5', textShadow: isVideoOn ? '0 0 8px rgba(139,92,246,0.8)' : '0 0 8px rgba(239,68,68,0.7)'}}>{isVideoOn ? t('chat.cam') : (t('chat.off') || 'Off')}</span>
             </button>
 
             {/* Mic */}
@@ -1448,7 +1448,7 @@ export default function ChatRoom() {
               >
                 {isMicOn ? <Mic className="w-[18px] h-[18px] text-white drop-shadow" /> : <MicOff className="w-[18px] h-[18px] text-white drop-shadow" />}
               </div>
-              <span className="text-[10px] font-bold tracking-wide" style={{color: isMicOn ? '#93c5fd' : '#fca5a5', textShadow: isMicOn ? '0 0 8px rgba(59,130,246,0.8)' : '0 0 8px rgba(239,68,68,0.7)'}}>{isMicOn ? 'ميكروفون' : 'مكتوم'}</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color: isMicOn ? '#93c5fd' : '#fca5a5', textShadow: isMicOn ? '0 0 8px rgba(59,130,246,0.8)' : '0 0 8px rgba(239,68,68,0.7)'}}>{isMicOn ? t('chat.mic') : (t('chat.muted') || 'Muted')}</span>
             </button>
           </div>
 
@@ -1472,7 +1472,7 @@ export default function ChatRoom() {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-bold tracking-wide" style={{color:'#fda4af', textShadow:'0 0 8px rgba(244,63,94,0.8)'}}>أصدقاء</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color:'#fda4af', textShadow:'0 0 8px rgba(244,63,94,0.8)'}}>{t('chat.friends')}</span>
             </button>
 
             {/* Store */}
@@ -1487,7 +1487,7 @@ export default function ChatRoom() {
               >
                 <ShoppingBag className="w-[18px] h-[18px] text-white drop-shadow" />
               </div>
-              <span className="text-[10px] font-bold tracking-wide" style={{color:'#e879f9', textShadow:'0 0 8px rgba(217,70,239,0.8)'}}>المتجر</span>
+              <span className="text-[10px] font-bold tracking-wide" style={{color:'#e879f9', textShadow:'0 0 8px rgba(217,70,239,0.8)'}}>{t('chat.store')}</span>
             </button>
 
             {/* Camera Switch */}

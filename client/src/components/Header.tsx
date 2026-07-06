@@ -85,9 +85,9 @@ export default function Header() {
 
               {/* Language Switcher Desktop */}
               <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full border border-gray-200">
-                <button onClick={() => setLanguage('ar')} className={`px-2 py-1 rounded-full text-[10px] font-bold transition-all ${language === 'ar' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>عربي</button>
-                <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-full text-[10px] font-bold transition-all ${language === 'en' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>EN</button>
-                <button onClick={() => setLanguage('fr')} className={`px-2 py-1 rounded-full text-[10px] font-bold transition-all ${language === 'fr' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>FR</button>
+                <button onClick={() => setLanguage('ar')} className={`px-2 py-1 rounded-full text-base transition-all ${language === 'ar' ? 'bg-white shadow-sm scale-110' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`} title="العربية">🇸🇦</button>
+                <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-full text-base transition-all ${language === 'en' ? 'bg-white shadow-sm scale-110' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`} title="English">🇺🇸</button>
+                <button onClick={() => setLanguage('fr')} className={`px-2 py-1 rounded-full text-base transition-all ${language === 'fr' ? 'bg-white shadow-sm scale-110' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`} title="Français">🇫🇷</button>
               </div>
 
               <button onClick={handleLogout} title="تسجيل الخروج"
@@ -100,9 +100,9 @@ export default function Header() {
             <>
               {/* Language Switcher Desktop (Unauthed) */}
               <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full border border-gray-200 mr-2">
-                <button onClick={() => setLanguage('ar')} className={`px-2 py-1 rounded-full text-[10px] font-bold transition-all ${language === 'ar' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>عربي</button>
-                <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-full text-[10px] font-bold transition-all ${language === 'en' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>EN</button>
-                <button onClick={() => setLanguage('fr')} className={`px-2 py-1 rounded-full text-[10px] font-bold transition-all ${language === 'fr' ? 'bg-white text-purple-600 shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>FR</button>
+                <button onClick={() => setLanguage('ar')} className={`px-2 py-1 rounded-full text-base transition-all ${language === 'ar' ? 'bg-white shadow-sm scale-110' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`} title="العربية">🇸🇦</button>
+                <button onClick={() => setLanguage('en')} className={`px-2 py-1 rounded-full text-base transition-all ${language === 'en' ? 'bg-white shadow-sm scale-110' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`} title="English">🇺🇸</button>
+                <button onClick={() => setLanguage('fr')} className={`px-2 py-1 rounded-full text-base transition-all ${language === 'fr' ? 'bg-white shadow-sm scale-110' : 'grayscale opacity-50 hover:grayscale-0 hover:opacity-100'}`} title="Français">🇫🇷</button>
               </div>
               <button onClick={handleLogin} className="text-purple-600 font-semibold hover:text-purple-700 transition-colors">
                 {t('nav.login')}
@@ -149,10 +149,10 @@ export default function Header() {
           {/* Language Switcher Mobile */}
           <div className="flex items-center gap-2 pt-2">
             <Languages className="w-4 h-4 text-gray-400" />
-            <div className="flex gap-2">
-              <button onClick={() => setLanguage('ar')} className={`px-3 py-1 rounded-lg text-xs font-bold ${language === 'ar' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>العربية</button>
-              <button onClick={() => setLanguage('en')} className={`px-3 py-1 rounded-lg text-xs font-bold ${language === 'en' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>English</button>
-              <button onClick={() => setLanguage('fr')} className={`px-3 py-1 rounded-lg text-xs font-bold ${language === 'fr' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>Français</button>
+            <div className="flex gap-3">
+              <button onClick={() => setLanguage('ar')} className={`text-2xl transition-all ${language === 'ar' ? 'scale-125' : 'grayscale opacity-50'}`}>🇸🇦</button>
+              <button onClick={() => setLanguage('en')} className={`text-2xl transition-all ${language === 'en' ? 'scale-125' : 'grayscale opacity-50'}`}>🇺🇸</button>
+              <button onClick={() => setLanguage('fr')} className={`text-2xl transition-all ${language === 'fr' ? 'scale-125' : 'grayscale opacity-50'}`}>🇫🇷</button>
             </div>
           </div>
 
@@ -173,7 +173,7 @@ export default function Header() {
                       )}
                     </p>
                     <p className="text-xs text-purple-500 font-medium">
-                      {(user as any).isPremium ? "⭐ عضو VIP" : "مسجّل الدخول"}
+                      {(user as any).isPremium ? `⭐ ${t('nav.vip_member')}` : t('nav.logged_in')}
                     </p>
                   </div>
                   {/* Notification bell in mobile menu too */}
@@ -182,19 +182,19 @@ export default function Header() {
                 <button onClick={() => { setIsMenuOpen(false); handleProfile(); }}
                   className="border-2 border-purple-300 text-purple-600 font-bold py-2.5 px-6 rounded-2xl flex items-center justify-center gap-2 hover:bg-purple-50 transition-colors"
                 >
-                  <UserCircle className="w-4 h-4 flex-shrink-0" /> الملف الشخصي
+                  <UserCircle className="w-4 h-4 flex-shrink-0" /> {t('nav.profile')}
                 </button>
                 <button onClick={() => { setIsMenuOpen(false); handleStartChat(); }}
                   className="bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold py-3 px-6 rounded-2xl text-center flex items-center justify-center gap-2 shadow-lg shadow-purple-200"
                 >
                   <Video className="w-4 h-4 flex-shrink-0" />
-                  ابدأ الدردشة الآن
+                  {t('nav.chat')}
                 </button>
                 <button onClick={() => { setIsMenuOpen(false); handleLogout(); }}
                   className="text-red-500 font-semibold py-2 text-center flex items-center justify-center gap-2 hover:text-red-700 transition-colors"
                 >
                   <LogOut className="w-4 h-4 flex-shrink-0" />
-                  تسجيل الخروج
+                  {t('nav.logout')}
                 </button>
               </>
             ) : (

@@ -1,4 +1,5 @@
 import { X, Star, Zap, Heart, UserPlus, Check, Clock, MapPin, Users } from 'lucide-react';
+import { useTranslation } from "@/contexts/LanguageContext";
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
@@ -15,6 +16,7 @@ const COUNTRY_NAMES: Record<string, string> = {
 };
 
 export default function UserProfileModal({ userId, onClose }: UserProfileModalProps) {
+  const { t } = useTranslation();
   const { data: profile, isLoading } = trpc.users.getPublicProfile.useQuery(userId, {
     enabled: userId > 0,
   });
@@ -35,7 +37,7 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center">
         <div className="bg-gray-900 rounded-3xl p-8 flex items-center gap-3 text-white">
           <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-          جاري التحميل...
+          {t('profile.loading')}
         </div>
       </div>
     );
@@ -45,7 +47,7 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={onClose}>
         <div className="bg-gray-900 rounded-3xl p-8 text-white text-center">
-          <p className="text-white/60">لم يُعثر على الملف الشخصي</p>
+          <p className="text-white/60">{t('profile.not_found')}</p>
         </div>
       </div>
     );
@@ -104,17 +106,17 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
               </div>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 {profile.age && (
-                  <span className="text-white/60 text-xs">{profile.age} سنة</span>
+                  <span className="text-white/60 text-xs">{profile.age} {t('profile.years')}</span>
                 )}
                 {profile.gender && (
                   <span className="text-white/40 text-xs">
-                    {profile.gender === 'male' ? '♂ ذكر' : profile.gender === 'female' ? '♀ أنثى' : ''}
+                    {profile.gender === 'male' ? t('profile.male') : profile.gender === 'female' ? t('profile.female') : ''}
                   </span>
                 )}
                 {profile.isOnline ? (
-                  <span className="text-green-400 text-xs font-bold">● متصل</span>
+                  <span className="text-green-400 text-xs font-bold">{t('profile.online')}</span>
                 ) : (
-                  <span className="text-white/40 text-xs">غير متصل</span>
+                  <span className="text-white/40 text-xs">{t('profile.offline')}</span>
                 )}
               </div>
             </div>
@@ -140,7 +142,7 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
               >
                 ●●●
               </p>
-              <p className="text-white/50 text-[10px] font-bold">نجوم</p>
+              <p className="text-white/50 text-[10px] font-bold">{t('profile.stars')}</p>
             </div>
             {/* نقاط — مشوّشة دائماً */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
@@ -153,7 +155,7 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
               >
                 ●●●
               </p>
-              <p className="text-white/50 text-[10px] font-bold">نقاط</p>
+              <p className="text-white/50 text-[10px] font-bold">{t('profile.points')}</p>
             </div>
             {/* مشاهدات — ظاهرة */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-3 text-center">
@@ -161,7 +163,7 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
                 <Users className="w-3.5 h-3.5 text-blue-400" />
               </div>
               <p className="text-white font-black text-base">{profile.profileViews ?? 0}</p>
-              <p className="text-white/50 text-[10px] font-bold">مشاهدة</p>
+              <p className="text-white/50 text-[10px] font-bold">{t('profile.views')}</p>
             </div>
           </div>
 
@@ -174,7 +176,7 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
             )}
             {memberSince && (
               <span className="flex items-center gap-1 bg-white/5 border border-white/10 text-white/60 text-xs px-3 py-1.5 rounded-full">
-                <Heart className="w-3 h-3" /> منذ {memberSince}
+                <Heart className="w-3 h-3" /> {t('profile.since')} {memberSince}
               </span>
             )}
           </div>
@@ -182,11 +184,11 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
           {/* Friend request button */}
           {status === 'friends' ? (
             <div className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-green-500/15 border border-green-500/30 text-green-400 font-bold text-sm">
-              <Check className="w-4 h-4" /> أصدقاء بالفعل
+              <Check className="w-4 h-4" /> {t('profile.is_friend')}
             </div>
           ) : status === 'pending' ? (
             <div className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-yellow-500/15 border border-yellow-500/30 text-yellow-400 font-bold text-sm">
-              <Clock className="w-4 h-4" /> طلب الصداقة بانتظار الرد
+              <Clock className="w-4 h-4" /> {t('profile.pending')}
             </div>
           ) : (
             <button
@@ -199,7 +201,7 @@ export default function UserProfileModal({ userId, onClose }: UserProfileModalPr
               ) : (
                 <UserPlus className="w-4 h-4" />
               )}
-              إرسال طلب صداقة
+              {t('profile.send_friend')}
             </button>
           )}
         </div>

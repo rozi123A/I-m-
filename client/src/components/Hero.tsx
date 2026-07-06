@@ -1,4 +1,5 @@
 import { Play, LogOut, UserPlus, MessageCircle, Video } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 export default function Hero() {
   const [, setLocation] = useLocation();
   const { isAuthenticated, user, loading, logout } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -36,7 +38,7 @@ export default function Hero() {
         </div>
 
         <h1 className="font-display text-5xl md:text-6xl font-bold mb-4 text-white leading-tight drop-shadow-lg">
-          ابدأ دردشة فيديو حية الآن
+          {t('home.hero_title')}
         </h1>
 
         {loading ? (
@@ -49,7 +51,7 @@ export default function Hero() {
         ) : isAuthenticated && user ? (
           /* ===== SAVED ACCOUNT - circular card ===== */
           <div className="mt-8 flex flex-col items-center gap-5">
-            <p className="text-white/80 text-base font-medium tracking-wide">حسابك المحفوظ</p>
+            <p className="text-white/80 text-base font-medium tracking-wide">{t('nav.logged_in')}</p>
 
             {/* Big circular avatar card — clicking it enters chat */}
             <button
@@ -84,7 +86,7 @@ export default function Hero() {
                 <p className="text-white font-bold text-2xl drop-shadow">{user.name}</p>
                 {user.gender && (
                   <p className="text-white/60 text-sm mt-0.5">
-                    {user.gender === "male" ? "ذكر" : user.gender === "female" ? "انثى" : "اخر"}
+                    {user.gender === "male" ? t('profile.male') : user.gender === "female" ? t('profile.female') : "other"}
                   </p>
                 )}
               </div>
@@ -92,7 +94,7 @@ export default function Hero() {
               {/* Enter chat button */}
               <div className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-red-500 group-hover:from-pink-600 group-hover:to-red-600 text-white font-bold px-8 py-3 rounded-full shadow-xl transition-all duration-300 transform group-hover:scale-105">
                 <MessageCircle className="w-5 h-5" />
-                <span>ابدأ الدردشة الآن</span>
+                <span>{t('nav.chat')}</span>
               </div>
             </button>
 
@@ -104,14 +106,14 @@ export default function Hero() {
                 className="flex items-center justify-center gap-2 text-white/80 hover:text-white text-sm border-2 border-white/30 hover:border-white/70 hover:bg-white/10 rounded-full px-7 py-2.5 transition-all duration-200 font-medium"
               >
                 <LogOut className="w-4 h-4 flex-shrink-0" />
-                تسجيل الخروج
+                {t('nav.logout')}
               </button>
               <button
                 onClick={async () => { await logout(); setLocation("/login"); }}
                 className="flex items-center justify-center gap-2 text-white/80 hover:text-white text-sm border-2 border-white/30 hover:border-white/70 hover:bg-white/10 rounded-full px-7 py-2.5 transition-all duration-200 font-medium"
               >
                 <UserPlus className="w-4 h-4 flex-shrink-0" />
-                إضافة حساب آخر
+                {t('nav.add_account') || 'Add Account'}
               </button>
             </div>
           </div>
@@ -120,7 +122,7 @@ export default function Hero() {
           /* ===== GUEST - registration CTA ===== */
           <>
             <p className="text-lg md:text-xl text-white/80 mb-10 max-w-xl mx-auto leading-relaxed">
-              اتصل بأشخاص حقيقيين من حول العالم. لا حدود، لا انتظار، فقط اتصالات حقيقية.
+              {t('home.hero_desc')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -130,7 +132,7 @@ export default function Hero() {
                 onClick={() => setLocation("/login")}
               >
                 <MessageCircle className="w-5 h-5" />
-                ابدأ الدردشة مجاناً
+                {t('home.start_now')}
               </Button>
               <Button
                 size="lg"
@@ -141,7 +143,7 @@ export default function Hero() {
                 }
               >
                 <Play className="w-5 h-5 fill-white" />
-                شاهد كيفية العمل
+                {t('home.how_it_works') || 'How it works'}
               </Button>
             </div>
 
