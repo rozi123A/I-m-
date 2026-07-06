@@ -19,14 +19,17 @@ import PremiumMessageBubble from "@/components/PremiumMessageBubble";
 import { playMessageSound, playFriendSound, playRingSound } from '@/lib/notificationSound';
 import { toast } from 'sonner';
 
-// ── ICE config with TURN servers for 4G/5G mobile networks ───────────────────
+// ── ICE config with STUN + multiple free TURN servers for 4G/5G ─────────────
 const ICE_CONFIG: RTCConfiguration = {
   iceServers: [
+    // ── STUN servers (multiple providers for reliability) ──
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
     { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    // ── TURN: openrelay.metered.ca (free public) ──
     {
       urls: 'turn:openrelay.metered.ca:80',
       username: 'openrelayproject',
@@ -46,6 +49,22 @@ const ICE_CONFIG: RTCConfiguration = {
       urls: 'turn:openrelay.metered.ca:80?transport=tcp',
       username: 'openrelayproject',
       credential: 'openrelayproject',
+    },
+    // ── TURN: freestun.net (free backup TURN) ──
+    {
+      urls: 'turn:freestun.net:3479',
+      username: 'free',
+      credential: 'free',
+    },
+    {
+      urls: 'turn:freestun.net:5350',
+      username: 'free',
+      credential: 'free',
+    },
+    {
+      urls: 'turns:freestun.net:5349',
+      username: 'free',
+      credential: 'free',
     },
   ],
   iceCandidatePoolSize: 10,
