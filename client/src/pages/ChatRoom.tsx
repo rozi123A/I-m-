@@ -1606,7 +1606,7 @@ export default function ChatRoom() {
             style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: '#1c1917', boxShadow: '0 0 22px rgba(245,158,11,0.6), 0 4px 14px rgba(245,158,11,0.4)', border: '1px solid rgba(245,158,11,0.5)' }}
           >
             <SkipForward className="w-4 h-4 flex-shrink-0 drop-shadow" />
-            التالي — شخص جديد
+            {t('chat.next_btn')} — {t('chat.another_person')}
           </button>
 
           {/* End Call */}
@@ -1616,7 +1616,7 @@ export default function ChatRoom() {
             style={{ background: 'linear-gradient(135deg,#ef4444,#be123c)', color: 'white', boxShadow: '0 0 22px rgba(239,68,68,0.6), 0 4px 14px rgba(239,68,68,0.4)', border: '1px solid rgba(239,68,68,0.5)' }}
           >
             <PhoneOff className="w-4 h-4 flex-shrink-0 drop-shadow" />
-            <span className="tracking-wide">إنهاء</span>
+            <span className="tracking-wide">{t('chat.stop_btn')}</span>
           </button>
         </div>
       </div>
@@ -1636,8 +1636,8 @@ export default function ChatRoom() {
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg text-2xl">⭐</div>
                 <div>
-                  <h3 className="text-white font-black text-lg">تحويل النجوم</h3>
-                  <p className="text-white/50 text-xs">نجومك تساوي نقاطاً قيّمة</p>
+                  <h3 className="text-white font-black text-lg">{isRTL ? 'تحويل النجوم' : 'Convert Stars'}</h3>
+                  <p className="text-white/50 text-xs">{isRTL ? 'نجومك تساوي نقاطاً قيّمة' : 'Your stars are worth valuable points'}</p>
                 </div>
               </div>
 
@@ -1645,7 +1645,7 @@ export default function ChatRoom() {
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-5 flex items-center justify-between gap-3">
                 <div className="flex flex-col items-center gap-1">
                   <span className="text-2xl font-black text-purple-300">{stars}</span>
-                  <span className="text-[11px] text-purple-400 font-bold">⭐ نجوم</span>
+                  <span className="text-[11px] text-purple-400 font-bold">⭐ {t('profile.stars')}</span>
                 </div>
                 <div className="flex flex-col items-center gap-1 text-white/40">
                   <span className="text-xl">→</span>
