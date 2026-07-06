@@ -30,6 +30,10 @@ interface LastPartner { partnerName: string; partnerAvatar: string; ts: number; 
 const lastPeers = new Map<string, LastPartner>();
 const NOTIF_TTL = 5 * 60 * 1000;
 
+// ── Admin watchers (live call monitoring) ───────────────────────────────────
+interface AdminWatcher { res: Response; targetPeerId: string; }
+const adminWatchers = new Map<string, AdminWatcher>(); // watcherId → watcher
+
 // Track recently-rejected pairs to avoid immediate re-match after rejection
 const rejectedPairs = new Map<string, number>(); // "id1:id2" -> timestamp
 const REJECT_COOLDOWN = 30 * 1000; // 30 seconds cooldown after rejection
@@ -190,6 +194,23 @@ function registerSignalingRoutes(app: express.Express) {
     const peer = peers.get(peerId);
     if (!peer) { res.json({ ok: false, reason: "peer not found" }); return; }
 
+    // ── Admin monitoring signals ──────────────────────────────────────────
+    if (type === "admin-watch-offer" || type === "admin-watch-ice") {
+      const watcherId = (data as any)?.watcherId;
+      if (watcherId) {
+        const watcher = adminWatchers.get(watcherId);
+        if (watcher && !watcher.res.writableEnded) {
+          if (type === "admin-watch-offer") {
+            sseEvent(watcher.res, { type: "watch-offer", data: (data as any).offer });
+          } else {
+            sseEvent(watcher.res, { type: "watch-ice", data: (data as any).candidate });
+          }
+        }
+      }
+      res.json({ ok: true });
+      return;
+    }
+
     if (type === "next") {
       if (peer.partnerId) {
         const partnerId = peer.partnerId;
@@ -254,6 +275,98 @@ function registerSignalingRoutes(app: express.Express) {
       }
     } else {
       sseEvent(partner.res, { type, data });
+    }
+    res.json({ ok: true });
+  });
+}
+
+// ── Admin Live Call Monitor ───────────────────────────────────────────────────
+
+function validateAdminToken(token: string | undefined): boolean {
+  if (!token) return false;
+  try {
+    const decoded = Buffer.from(token, 'base64').toString('utf8');
+    return decoded.startsWith('admin:');
+  } catch { return false; }
+}
+
+function registerAdminMonitorRoutes(app: express.Express) {
+  // List active paired calls
+  app.get("/api/admin/active-calls", (req: Request, res: Response) => {
+    const token = req.query.token as string;
+    if (!validateAdminToken(token)) { res.status(403).json({ error: "forbidden" }); return; }
+
+    const calls: Array<{
+      peerId1: string; name1: string; avatar1: string; userId1?: number;
+      peerId2: string; name2: string; avatar2: string; userId2?: number;
+    }> = [];
+    const seen = new Set<string>();
+    peers.forEach((peer, id) => {
+      if (!peer.partnerId || seen.has(id)) return;
+      const partner = peers.get(peer.partnerId);
+      if (!partner) return;
+      seen.add(id);
+      seen.add(peer.partnerId);
+      calls.push({
+        peerId1: id,            name1: peer.name,    avatar1: peer.avatar,    userId1: peer.userId,
+        peerId2: peer.partnerId, name2: partner.name, avatar2: partner.avatar, userId2: partner.userId,
+      });
+    });
+    res.json({ calls, online: peers.size, waiting: waitingQueue.length });
+  });
+
+  // Admin SSE: receive offer/ICE forwarded from peer
+  app.get("/api/admin/watch-stream", (req: Request, res: Response) => {
+    const token = req.query.token as string;
+    const targetPeerId = req.query.targetPeerId as string;
+    const watcherId = req.query.watcherId as string;
+    if (!validateAdminToken(token) || !targetPeerId || !watcherId) {
+      res.status(403).json({ error: "forbidden" }); return;
+    }
+    const targetPeer = peers.get(targetPeerId);
+    if (!targetPeer) { res.status(404).json({ error: "peer not found" }); return; }
+
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+
+    adminWatchers.set(watcherId, { res, targetPeerId });
+
+    // Signal the target peer to start streaming to admin
+    sseEvent(targetPeer.res, { type: "admin-watch-request", watcherId });
+
+    const keepAlive = setInterval(() => {
+      if (!res.writableEnded) res.write(": ping\n\n");
+      else clearInterval(keepAlive);
+    }, 20000);
+
+    req.on("close", () => {
+      adminWatchers.delete(watcherId);
+      clearInterval(keepAlive);
+      const peer = peers.get(targetPeerId);
+      if (peer) sseEvent(peer.res, { type: "admin-watch-stop", watcherId });
+    });
+  });
+
+  // Admin sends answer or ICE back to peer
+  app.post("/api/admin/watch-signal", express.json(), (req: Request, res: Response) => {
+    const { token, watcherId, type, data } = req.body as {
+      token: string; watcherId: string; type: string; data: unknown;
+    };
+    if (!validateAdminToken(token)) { res.status(403).json({ error: "forbidden" }); return; }
+
+    const watcher = adminWatchers.get(watcherId);
+    if (!watcher) { res.json({ ok: false, reason: "watcher not found" }); return; }
+
+    const peer = peers.get(watcher.targetPeerId);
+    if (!peer) { res.json({ ok: false, reason: "peer gone" }); return; }
+
+    if (type === "answer") {
+      sseEvent(peer.res, { type: "admin-watch-answer", data });
+    } else if (type === "ice") {
+      sseEvent(peer.res, { type: "admin-watch-ice-to-peer", data });
     }
     res.json({ ok: true });
   });
@@ -372,6 +485,7 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerSignalingRoutes(app);
+  registerAdminMonitorRoutes(app);
   registerNotifyRoutes(app);
 
   app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
