@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 export default function Hero() {
   const [, setLocation] = useLocation();
   const { isAuthenticated, user, loading, logout } = useAuth();
-  const { t } = useTranslation();
+  const { t: translate } = useTranslation();
+  const t = translate;
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
