@@ -70,9 +70,9 @@ export default function Store() {
   const canAfford    = userCredits >= PREMIUM_COST;
 
   const starPackages = [
-    { amount: 50,  price: "$0.99",  label: t('store.stars_pack_1') },
-    { amount: 150, price: "$2.49",  label: t('store.stars_pack_2'), popular: true },
-    { amount: 500, price: "$6.99", label: t('store.stars_pack_3') },
+    { amount: 5000,  price: "$0.99",  label: t('store.stars_pack_1') },
+    { amount: 15000, price: "$2.49",  label: t('store.stars_pack_2'), popular: true },
+    { amount: 50000, price: "$6.99",  label: t('store.stars_pack_3') },
   ];
 
   const premiumFeatures = [
