@@ -351,11 +351,11 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    /** Upgrade to Premium by spending 500 credits */
+    /** Upgrade to Premium by spending 50000 credits */
     upgradeWithCredits: protectedProcedure
       .mutation(async ({ ctx }) => {
         if ((ctx.user as any).isPremium) throw new Error("أنت مشترك بالفعل في Premium!");
-        const COST = 500;
+        const COST = 50000;
         const balance = await getUserCredits(ctx.user.id);
         if (balance < COST) throw new Error(`رصيدك ${balance} نقطة فقط. تحتاج ${COST} نقطة للاشتراك.`);
         const ok = await deductCredits(ctx.user.id, COST);
