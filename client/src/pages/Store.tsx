@@ -55,7 +55,7 @@ export default function Store() {
 
   const upgradeWithCreditsMutation = trpc.gifts.upgradeWithCredits.useMutation({
     onSuccess: () => {
-      toast.success(isRTL ? "🎉 مرحباً بك في Premium! تم خصم 500 نقطة." : "🎉 Welcome to Premium! 500 points deducted.");
+      toast.success(isRTL ? "🎉 مرحباً بك في Premium! تم خصم 50,000 نقطة." : "🎉 Welcome to Premium! 50,000 points deducted.");
       mutateAuth();
     },
     onError: (e) => toast.error(e.message),
@@ -65,7 +65,7 @@ export default function Store() {
   const creditsQuery = trpc.gifts.getBalance.useQuery(undefined, { enabled: !!user });
   const userCredits  = creditsQuery.data?.credits ?? 0;
   const isPremium    = !!(user as any)?.isPremium;
-  const PREMIUM_COST = 500;
+  const PREMIUM_COST = 50000;
   const canAfford    = userCredits >= PREMIUM_COST;
 
   const starPackages = [
