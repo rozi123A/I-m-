@@ -1,5 +1,9 @@
-FROM node:20-slim AS base
+FROM node:20-slim
 
+# Disable corepack completely to avoid pnpm conflicts
+RUN corepack disable
+
+# Install pnpm directly via npm
 RUN npm install -g pnpm@10.4.1
 
 WORKDIR /app
