@@ -1,7 +1,7 @@
 FROM node:20-slim
 
-# Disable corepack completely to avoid pnpm conflicts
-RUN corepack disable
+# Remove corepack completely to avoid any pnpm auto-activation
+RUN corepack disable && rm -f /usr/local/bin/corepack
 
 # Install pnpm directly via npm
 RUN npm install -g pnpm@10.4.1
