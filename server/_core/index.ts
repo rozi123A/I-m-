@@ -431,7 +431,7 @@ function registerRecordingRoutes(app: express.Express) {
 
   // List recordings — from B2 if configured, else from /tmp
   app.get('/api/admin/recordings', async (req: Request, res: Response) => {
-    const token = req.query.token as string;
+    const token = extractBearerToken(req);
     if (!validateAdminToken(token)) { res.status(403).json({ error: 'forbidden' }); return; }
     try {
       if (b2) {
@@ -454,7 +454,7 @@ function registerRecordingRoutes(app: express.Express) {
 
   // Stream / download — from B2 if configured
   app.get('/api/admin/recording/:id', async (req: Request, res: Response) => {
-    const token = req.query.token as string;
+    const token = extractBearerToken(req);
     if (!validateAdminToken(token)) { res.status(403).send('forbidden'); return; }
     const id = req.params.id.replace(/[^a-zA-Z0-9_-]/g, '');
     const isDownload = req.query.dl === '1';
@@ -479,7 +479,7 @@ function registerRecordingRoutes(app: express.Express) {
 
   // Delete — from B2 + /tmp
   app.delete('/api/admin/recording/:id', async (req: Request, res: Response) => {
-    const token = req.query.token as string;
+    const token = extractBearerToken(req);
     if (!validateAdminToken(token)) { res.status(403).json({ error: 'forbidden' }); return; }
     const id = req.params.id.replace(/[^a-zA-Z0-9_-]/g, '');
     await b2Delete(`recordings/${id}.webm`);
@@ -492,26 +492,34 @@ function registerRecordingRoutes(app: express.Express) {
 
 // ── Admin Live Call Monitor ───────────────────────────────────────────────────
 
+/** Extract Bearer token from Authorization header */
+function extractBearerToken(req: Request): string | undefined {
+  const auth = req.headers.authorization;
+  if (!auth) return undefined;
+  const parts = auth.split(' ');
+  if (parts.length === 2 && parts[0]?.toLowerCase() === 'bearer') return parts[1];
+  return undefined;
+}
+
 function validateAdminToken(token: string | undefined): boolean {
   if (!token) return false;
   try {
-    const adminSecret = process.env.ADMIN_SECRET || 'admin2025';
-    // Accept HMAC-signed tokens (new) or legacy base64 tokens (transitional)
+    const adminSecret = process.env.ADMIN_SECRET;
+    // 🔒 No fallback — if ADMIN_SECRET is not set, reject all admin access
+    if (!adminSecret) return false;
+    // Accept HMAC-signed tokens only
     const expected = crypto
       .createHmac('sha256', adminSecret)
       .update('admin-session')
       .digest('hex');
-    if (token === expected) return true;
-    // Legacy fallback: base64(admin:<secret>) — must match exact secret
-    const decoded = Buffer.from(token, 'base64').toString('utf8');
-    return decoded === `admin:${adminSecret}`;
+    return crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
   } catch { return false; }
 }
 
 function registerAdminMonitorRoutes(app: express.Express) {
   // List active paired calls
   app.get("/api/admin/active-calls", (req: Request, res: Response) => {
-    const token = req.query.token as string;
+    const token = extractBearerToken(req);
     if (!validateAdminToken(token)) { res.status(403).json({ error: "forbidden" }); return; }
 
     const calls: Array<{
@@ -535,7 +543,7 @@ function registerAdminMonitorRoutes(app: express.Express) {
 
   // Admin SSE: receive offer/ICE forwarded from peer
   app.get("/api/admin/watch-stream", (req: Request, res: Response) => {
-    const token = req.query.token as string;
+    const token = extractBearerToken(req);
     const targetPeerId = req.query.targetPeerId as string;
     const watcherId = req.query.watcherId as string;
     if (!validateAdminToken(token) || !targetPeerId || !watcherId) {
@@ -570,8 +578,9 @@ function registerAdminMonitorRoutes(app: express.Express) {
 
   // Admin sends answer or ICE back to peer
   app.post("/api/admin/watch-signal", express.json(), (req: Request, res: Response) => {
-    const { token, watcherId, type, data } = req.body as {
-      token: string; watcherId: string; type: string; data: unknown;
+    const token = extractBearerToken(req);
+    const { watcherId, type, data } = req.body as {
+      watcherId: string; type: string; data: unknown;
     };
     if (!validateAdminToken(token)) { res.status(403).json({ error: "forbidden" }); return; }
 
@@ -724,8 +733,33 @@ async function startServer() {
   app.use('/api/trpc/admin.verifyAdmin', authLimiter);
   app.use('/api/trpc', generalLimiter);
 
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // 🔒 FIX: Rate limiting on signaling and recording endpoints
+  const signalLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 15,
+    message: { error: 'Too many connection attempts, please wait.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  const chunkLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  const adminLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use('/api/signal/connect', signalLimiter);
+  app.use('/api/record/chunk', chunkLimiter);
+  app.use('/api/admin', adminLimiter);
+
+  // 🔒 FIX: Reduced body limits to prevent DoS
+  app.use(express.json({ limit: "2mb" }));
+  app.use(express.urlencoded({ limit: "2mb", extended: true }));
 
   registerStorageProxy(app);
   registerOAuthRoutes(app);

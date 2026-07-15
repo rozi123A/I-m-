@@ -404,7 +404,9 @@ function CallsTab({ token }: { token: string }) {
   useEffect(() => {
     const fetchCalls = async () => {
       try {
-        const r = await fetch(`/api/admin/active-calls?token=${encodeURIComponent(token)}`);
+        const r = await fetch('/api/admin/active-calls', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         const d = await r.json();
         setCalls(d.calls || []);
       } catch {}
@@ -452,10 +454,13 @@ function CallsTab({ token }: { token: string }) {
 function RecordingsTab({ token }: { token: string }) {
   const [recs, setRecs] = useState<RecMeta[]>([]);
   const [playing, setPlaying] = useState<RecMeta | null>(null);
+  const [videoBlob, setVideoBlob] = useState<string | null>(null);
 
   const fetchRecs = async () => {
     try {
-      const r = await fetch(`/api/admin/recordings?token=${encodeURIComponent(token)}`);
+      const r = await fetch('/api/admin/recordings', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const d = await r.json();
       setRecs(d.recordings || []);
     } catch {}
@@ -463,22 +468,59 @@ function RecordingsTab({ token }: { token: string }) {
 
   useEffect(() => { fetchRecs(); }, []);
 
+  // Load video via fetch (with Authorization header) → blob URL
+  const openVideo = async (rec: RecMeta) => {
+    setPlaying(rec);
+    setVideoBlob(null);
+    try {
+      const r = await fetch(`/api/admin/recording/${rec.sessionId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) return;
+      const blob = await r.blob();
+      setVideoBlob(URL.createObjectURL(blob));
+    } catch {}
+  };
+
+  // Close video and revoke blob URL to free memory
+  const closeVideo = () => {
+    if (videoBlob) URL.revokeObjectURL(videoBlob);
+    setPlaying(null);
+    setVideoBlob(null);
+  };
+
+  // Download via fetch (with Authorization header) → blob → anchor click
+  const downloadRec = async (rec: RecMeta) => {
+    try {
+      const r = await fetch(`/api/admin/recording/${rec.sessionId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) return;
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${rec.name1}-${rec.name2}-${rec.sessionId}.webm`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
+  };
+
   return (
     <div className="space-y-3">
       {playing && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPlaying(null)}>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={closeVideo}>
           <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-black text-gray-900">{playing.name1} ↔ {playing.name2}</h3>
-              <button onClick={() => setPlaying(null)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={closeVideo} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <video
-              src={`/api/admin/recording/${playing.sessionId}?token=${encodeURIComponent(token)}`}
-              controls autoPlay
-              className="w-full rounded-2xl bg-gray-900"
-            />
+            {videoBlob
+              ? <video src={videoBlob} controls autoPlay className="w-full rounded-2xl bg-gray-900" />
+              : <div className="w-full h-40 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm">جاري التحميل…</div>
+            }
           </div>
         </div>
       )}
@@ -498,15 +540,14 @@ function RecordingsTab({ token }: { token: string }) {
             <p className="text-xs text-gray-400">{fmtDate(r.startTime)} • {fmtSize(r.size)}</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <a
-              href={`/api/admin/recording/${r.sessionId}?token=${encodeURIComponent(token)}`}
-              download
+            <button
+              onClick={() => downloadRec(r)}
               className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
             >
               <Download className="w-4 h-4" />
-            </a>
+            </button>
             <button
-              onClick={() => setPlaying(r)}
+              onClick={() => openVideo(r)}
               className="w-8 h-8 flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-lg hover:from-purple-700 hover:to-pink-600 transition-all shadow-sm"
             >
               <Play className="w-3.5 h-3.5" />
