@@ -353,16 +353,20 @@ export default function Profile() {
           )}
         </section>
 
-        {/* ── Hidden admin access (always visible, password-protected inside /admin) ── */}
-        <div className="flex justify-center pb-2">
-          <button
-            onClick={() => setLocation('/admin')}
-            className="flex items-center gap-1.5 text-white/15 hover:text-white/40 transition-colors text-xs py-2 px-4 rounded-full"
-          >
-            <Shield className="w-3 h-3" />
-            <span>إدارة</span>
-          </button>
-        </div>
+        {/* ── Admin Panel Entry ─────────────────────────────────────────── */}
+        <button
+          onClick={() => setLocation('/admin')}
+          className="w-full flex items-center gap-4 bg-slate-800 border border-slate-700 hover:border-red-500/50 hover:bg-slate-700/80 rounded-2xl px-5 py-4 transition-all group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40 group-hover:scale-105 transition-transform flex-shrink-0">
+            <Shield className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 text-right">
+            <p className="text-white font-black text-sm">لوحة تحكم الأدمن</p>
+            <p className="text-white/40 text-xs mt-0.5">إدارة المستخدمين والمحتوى</p>
+          </div>
+          <ArrowLeft className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors rotate-180" />
+        </button>
 
       </div>
     </div>
