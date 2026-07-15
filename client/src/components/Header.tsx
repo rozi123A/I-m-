@@ -1,4 +1,4 @@
-import { Menu, X, LogOut, Video, UserCircle, Star, Languages } from "lucide-react";
+import { Menu, X, LogOut, Video, UserCircle, Star, Languages, Shield, Globe } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useState } from "react";
 import { useLocation } from "wouter";
