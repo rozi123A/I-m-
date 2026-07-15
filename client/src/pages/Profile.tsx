@@ -287,6 +287,28 @@ export default function Profile() {
           </button>
         </section>
 
+        {/* ── Admin Panel (only for admins) ────────────────────────────── */}
+        {u?.role === 'admin' && (
+          <section className="rounded-2xl border border-red-500/40 bg-red-500/10 p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-black text-white text-base">لوحة الإدارة</h2>
+                <p className="text-red-300/70 text-xs">مرئية للأدمن فقط</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setLocation('/admin')}
+              className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:from-red-700 hover:to-orange-600 transition-all shadow-lg shadow-red-900/30"
+            >
+              <Shield className="w-4 h-4" />
+              دخول لوحة الإدارة
+            </button>
+          </section>
+        )}
+
         {/* ── Credits & Stars ───────────────────────────────────────────── */}
         <section className="bg-slate-800 rounded-2xl border border-slate-700 p-5">
           <div className="flex items-center justify-between mb-3">
