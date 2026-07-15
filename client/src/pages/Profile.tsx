@@ -346,8 +346,8 @@ export default function Profile() {
           )}
         </section>
 
-        {/* ── Admin Panel Entry (Only for Admins) ─────────────────────────── */}
-        {u?.role === 'admin' && (
+        {/* ── Admin Panel Entry (Visible for Admins or with Session) ─────── */}
+        {(u?.role === 'admin' || sessionStorage.getItem('admin_mode')) && (
           <button
             onClick={() => setLocation('/admin')}
             className="w-full flex items-center gap-4 bg-slate-800 border border-slate-700 hover:border-red-500/50 hover:bg-slate-700/80 rounded-2xl px-5 py-4 transition-all group"
