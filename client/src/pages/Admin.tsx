@@ -1,8 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useLocation } from 'wouter';
-import { Users, Globe, Crown, RefreshCw, ArrowRight, Lock, Shield, Eye, EyeOff, Video, Radio, X, MonitorPlay, Trash2, Play, Download, Wallet, Check, Ban, Clock, Star } from 'lucide-react';
+import {
+  Users, Globe, Crown, RefreshCw, ArrowLeft, Lock, Shield,
+  Eye, EyeOff, Video, Radio, X, MonitorPlay, Trash2, Play,
+  Download, Wallet, Check, Ban, Star, AlertTriangle
+} from 'lucide-react';
 import { toast } from 'sonner';
+import Header from '@/components/Header';
 
 const ADMIN_SESSION_KEY = 'admin_mode';
 
@@ -24,14 +29,22 @@ function timeAgo(date: Date): string {
   return `منذ ${Math.floor(seconds / 86400)} يوم`;
 }
 
+function fmtDate(ts: number) {
+  return new Date(ts).toLocaleString('ar-EG', { hour12: true, month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function fmtSize(b: number) {
+  if (b > 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.round(b / 1024)} KB`;
+}
+
 /* ══════════════════════════════════════════════════════════
-   Password Gate — independent of user role
-   (أبقيته كما هو لضمان الوصول للوحة)
+   Password Gate
 ══════════════════════════════════════════════════════════ */
 function PasswordGate({ onVerified }: { onVerified: () => void }) {
   const [secret, setSecret] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
+  const [, setLocation] = useLocation();
 
   const verifyMutation = trpc.admin.verifySecret.useMutation({
     onSuccess: (data) => {
@@ -59,89 +72,63 @@ function PasswordGate({ onVerified }: { onVerified: () => void }) {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh', width: '100%', backgroundColor: '#030712',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '24px', boxSizing: 'border-box',
-    }}>
-      <div style={{
-        width: '100%', maxWidth: '380px',
-        backgroundColor: '#111827',
-        border: '1px solid #374151',
-        borderRadius: '20px', padding: '32px 24px', textAlign: 'center',
-      }}>
-        <div style={{
-          width: '64px', height: '64px', borderRadius: '16px',
-          backgroundColor: '#7c3aed',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 20px',
-        }}>
-          <Lock style={{ width: '28px', height: '28px', color: 'white' }} />
-        </div>
+    <div className="min-h-screen bg-white" dir="rtl">
+      <Header />
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4 py-12">
+        <div className="w-full max-w-sm">
+          {/* Card */}
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 text-center">
+            {/* Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-purple-200">
+              <Lock className="w-7 h-7 text-white" />
+            </div>
 
-        <h1 style={{ color: 'white', fontSize: '22px', fontWeight: 900, marginBottom: '6px' }}>
-          لوحة الإدارة
-        </h1>
-        <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '28px' }}>
-          أدخل كلمة المرور للدخول
-        </p>
+            <h1 className="text-2xl font-black text-gray-900 mb-1">لوحة الإدارة</h1>
+            <p className="text-gray-500 text-sm mb-7">أدخل كلمة المرور للدخول</p>
 
-        {error && (
-          <div style={{
-            backgroundColor: '#451a1a', border: '1px solid #991b1b',
-            borderRadius: '10px', padding: '10px 14px', marginBottom: '16px',
-            color: '#fca5a5', fontSize: '13px',
-          }}>
-            {error}
-          </div>
-        )}
+            {error && (
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-5 text-right">
+                <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                <span className="text-red-600 text-sm">{error}</span>
+              </div>
+            )}
 
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-          <div style={{ position: 'relative', flex: 1 }}>
-            <input
-              type={showPw ? 'text' : 'password'}
-              value={secret}
-              onChange={e => setSecret(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              placeholder="كلمة المرور"
-              dir="ltr"
-              style={{
-                width: '100%', boxSizing: 'border-box',
-                backgroundColor: '#1f2937',
-                border: '1px solid #4b5563',
-                borderRadius: '12px', padding: '12px 40px 12px 14px',
-                color: 'white', fontSize: '15px', outline: 'none',
-              }}
-            />
+            <div className="flex gap-2 mb-4">
+              <div className="relative flex-1">
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={secret}
+                  onChange={e => setSecret(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                  placeholder="كلمة المرور"
+                  dir="ltr"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 pl-10 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <button
+                onClick={handleSubmit}
+                disabled={verifyMutation.isPending}
+                className="bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold px-5 py-3 rounded-xl hover:from-purple-700 hover:to-pink-600 transition-all shadow-md shadow-purple-200 disabled:opacity-60 flex-shrink-0"
+              >
+                {verifyMutation.isPending ? '...' : 'دخول'}
+              </button>
+            </div>
+
             <button
-              type="button"
-              onClick={() => setShowPw(v => !v)}
-              style={{
-                position: 'absolute', left: '12px', top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: '#9ca3af', padding: 0,
-              }}
+              onClick={() => setLocation('/')}
+              className="text-gray-400 text-sm hover:text-purple-600 transition-colors flex items-center gap-1 mx-auto"
             >
-              {showPw
-                ? <EyeOff style={{ width: '16px', height: '16px' }} />
-                : <Eye style={{ width: '16px', height: '16px' }} />
-              }
+              <ArrowLeft className="w-3.5 h-3.5" />
+              العودة للرئيسية
             </button>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={verifyMutation.isPending}
-            style={{
-              backgroundColor: '#7c3aed', color: 'white', border: 'none',
-              borderRadius: '12px', padding: '12px 20px',
-              fontWeight: 700, fontSize: '14px', cursor: 'pointer',
-              opacity: verifyMutation.isPending ? 0.6 : 1,
-              flexShrink: 0,
-            }}
-          >
-            {verifyMutation.isPending ? '...' : 'دخول'}
-          </button>
         </div>
       </div>
     </div>
@@ -149,157 +136,8 @@ function PasswordGate({ onVerified }: { onVerified: () => void }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Payments Tab — New Feature
+   Reset VIPs Button
 ══════════════════════════════════════════════════════════ */
-function PaymentsTab() {
-  const { data: payments, refetch, isLoading } = trpc.gifts.getPendingPayments.useQuery();
-  const handleMutation = trpc.gifts.handlePaymentRequest.useMutation({
-    onSuccess: () => {
-      toast.success("تم تحديث حالة الطلب بنجاح");
-      refetch();
-    },
-    onError: (e) => toast.error(`فشل التحديث: ${e.message}`),
-  });
-
-  const handleAction = (requestId: number, status: 'approved' | 'rejected') => {
-    if (!confirm(`هل أنت متأكد من ${status === 'approved' ? 'قبول' : 'رفض'} هذا الطلب؟`)) return;
-    handleMutation.mutate({ requestId, status });
-  };
-
-  if (isLoading) return <div style={{ color: '#9ca3af', textAlign: 'center', padding: '40px' }}>جاري التحميل...</div>;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {payments?.length === 0 ? (
-        <div style={{ backgroundColor: '#1f2937', border: '1px dashed #374151', borderRadius: '16px', padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-          لا توجد طلبات دفع معلقة حالياً
-        </div>
-      ) : (
-        payments?.map((pay) => (
-          <div key={pay.id} style={{
-            backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '16px', padding: '16px',
-            display: 'flex', flexDirection: 'column', gap: '12px'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h3 style={{ color: 'white', fontWeight: 700, margin: 0, fontSize: '15px' }}>{pay.userName || 'مستخدم'}</h3>
-                <p style={{ color: '#9ca3af', fontSize: '12px', margin: '2px 0 0' }}>ID: {pay.userId} • {timeAgo(pay.createdAt)}</p>
-              </div>
-              <div style={{ backgroundColor: pay.itemType === 'vip' ? '#4c1d95' : '#78350f', color: 'white', fontSize: '10px', fontWeight: 900, padding: '4px 8px', borderRadius: '8px' }}>
-                {pay.itemType === 'vip' ? 'PREMIUM VIP' : `STARS (${pay.itemAmount})`}
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', backgroundColor: '#111827', padding: '12px', borderRadius: '12px' }}>
-              <div>
-                <p style={{ color: '#6b7280', fontSize: '10px', fontWeight: 700, margin: '0 0 4px' }}>المبلغ</p>
-                <p style={{ color: '#10b981', fontWeight: 900, margin: 0 }}>{pay.amount}</p>
-              </div>
-              <div>
-                <p style={{ color: '#6b7280', fontSize: '10px', fontWeight: 700, margin: '0 0 4px' }}>الوسيلة</p>
-                <p style={{ color: '#f59e0b', fontWeight: 700, margin: 0, fontSize: '13px' }}>{pay.method === 'binance_pay' ? 'Binance Pay' : 'USDT (TRC20)'}</p>
-              </div>
-              <div style={{ gridColumn: 'span 2', borderTop: '1px solid #1e293b', paddingTop: '8px', marginTop: '4px' }}>
-                <p style={{ color: '#6b7280', fontSize: '10px', fontWeight: 700, margin: '0 0 4px' }}>رقم المعاملة (TXID)</p>
-                <code style={{ color: 'white', fontSize: '12px', wordBreak: 'break-all' }}>{pay.transactionId}</code>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => handleAction(pay.id, 'approved')}
-                disabled={handleMutation.isPending}
-                style={{
-                  flex: 1, backgroundColor: '#059669', color: 'white', border: 'none', borderRadius: '10px',
-                  padding: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
-                }}
-              >
-                <Check style={{ width: '16px', height: '16px' }} /> قبول وتفعيل
-              </button>
-              <button
-                onClick={() => handleAction(pay.id, 'rejected')}
-                disabled={handleMutation.isPending}
-                style={{
-                  flex: 1, backgroundColor: '#dc2626', color: 'white', border: 'none', borderRadius: '10px',
-                  padding: '10px', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
-                }}
-              >
-                <Ban style={{ width: '16px', height: '16px' }} /> رفض الطلب
-              </button>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════
-   Existing Components (Watcher, Recordings) - Truncated for brevity
-══════════════════════════════════════════════════════════ */
-// ... (سأحافظ على بقية المكونات كما هي في الملف الأصلي)
-
-export default function Admin() {
-  const [location, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<'stats'|'calls'|'recordings'|'payments'>('stats');
-  const [isVerified, setIsVerified] = useState(false);
-  const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
-
-  useEffect(() => {
-    if (token) setIsVerified(true);
-  }, [token]);
-
-  if (!isVerified) return <PasswordGate onVerified={() => setIsVerified(true)} />;
-
-  return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#030712', color: 'white', paddingBottom: '40px' }} dir="rtl">
-      {/* Navbar */}
-      <div style={{ backgroundColor: '#111827', borderBottom: '1px solid #1e293b', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Shield style={{ width: '20px', height: '20px', color: '#7c3aed' }} />
-          <span style={{ fontWeight: 900, fontSize: '18px', letterSpacing: '-0.5px' }}>لوحة الإدارة</span>
-        </div>
-        <button onClick={() => setLocation('/')} style={{ background: 'none', border: 'none', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
-          الموقع <ArrowRight style={{ width: '14px', height: '14px', rotate: '180deg' }} />
-        </button>
-      </div>
-
-      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {[
-            { id: 'stats', label: 'الإحصائيات', icon: <Globe /> },
-            { id: 'calls', label: 'المكالمات', icon: <Video /> },
-            { id: 'payments', label: 'الطلبات المالية', icon: <Wallet /> },
-            { id: 'recordings', label: 'التسجيلات', icon: <MonitorPlay /> },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '12px', border: 'none',
-                backgroundColor: activeTab === tab.id ? '#7c3aed' : '#1f2937',
-                color: activeTab === tab.id ? 'white' : '#9ca3af',
-                fontWeight: 700, fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
-              }}
-            >
-              {tab.icon && <span style={{ width: '16px', height: '16px' }}>{tab.icon}</span>}
-              {tab.label}
-              {tab.id === 'payments' && <span style={{ backgroundColor: '#dc2626', color: 'white', fontSize: '10px', padding: '1px 5px', borderRadius: '99px', marginRight: '4px' }}>جديد</span>}
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        {activeTab === 'stats' && <StatsTab />}
-        {activeTab === 'payments' && <PaymentsTab />}
-        {activeTab === 'calls' && <CallsTab token={token!} />}
-        {activeTab === 'recordings' && <RecordingsTab token={token!} />}
-      </div>
-    </div>
-  );
-}
-
 function ResetVipsButton() {
   const resetMutation = trpc.gifts.resetAllVips.useMutation({
     onSuccess: () => toast.success("تم سحب VIP من جميع المستخدمين بنجاح"),
@@ -308,18 +146,18 @@ function ResetVipsButton() {
 
   return (
     <button
-      onClick={() => confirm("هل أنت متأكد من سحب VIP من جميع المستخدمين؟ (لن يتم المساس بالأدمن)") && resetMutation.mutate()}
+      onClick={() => confirm("هل أنت متأكد من سحب VIP من جميع المستخدمين؟") && resetMutation.mutate()}
       disabled={resetMutation.isPending}
-      style={{
-        backgroundColor: '#451a1a', color: '#fca5a5', border: '1px solid #991b1b',
-        borderRadius: '8px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer'
-      }}
+      className="text-xs font-bold text-red-500 border border-red-200 bg-red-50 hover:bg-red-100 rounded-lg px-3 py-1.5 transition-colors"
     >
       {resetMutation.isPending ? "جاري السحب..." : "سحب VIP من الكل"}
     </button>
   );
 }
 
+/* ══════════════════════════════════════════════════════════
+   Revoke User VIP Button
+══════════════════════════════════════════════════════════ */
 function RevokeUserVipButton({ userId }: { userId: number }) {
   const revokeMutation = trpc.gifts.revokeVip.useMutation({
     onSuccess: () => toast.success("تم سحب VIP من المستخدم"),
@@ -331,72 +169,96 @@ function RevokeUserVipButton({ userId }: { userId: number }) {
       onClick={(e) => { e.stopPropagation(); revokeMutation.mutate({ userId }); }}
       disabled={revokeMutation.isPending}
       title="سحب VIP"
-      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', padding: 0 }}
+      className="text-red-400 hover:text-red-600 transition-colors p-0.5"
     >
-      <X style={{ width: '12px', height: '12px' }} />
+      <X className="w-3 h-3" />
     </button>
   );
 }
 
-// ── Stats Tab Component ───────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════
+   Stats Tab
+══════════════════════════════════════════════════════════ */
 function StatsTab() {
   const { data: stats, isLoading, refetch } = trpc.admin.countryStats.useQuery();
   const { data: recent } = trpc.admin.newRegistrations.useQuery(50);
 
-  if (isLoading) return <div style={{ color: '#9ca3af', textAlign: 'center', padding: '40px' }}>جاري التحميل...</div>;
+  if (isLoading) return (
+    <div className="flex items-center justify-center py-16">
+      <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+    </div>
+  );
 
   const totalUsers = recent?.length || 0;
+  const vipCount = recent?.filter(u => u.isPremium).length || 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-        <div style={{ backgroundColor: '#1e1b4b', border: '1px solid #3730a3', borderRadius: '20px', padding: '20px', textAlign: 'center' }}>
-          <Users style={{ width: '24px', height: '24px', color: '#818cf8', margin: '0 auto 8px' }} />
-          <h4 style={{ margin: 0, color: '#a5b4fc', fontSize: '12px', fontWeight: 700 }}>إجمالي المستخدمين</h4>
-          <p style={{ margin: '4px 0 0', color: 'white', fontSize: '28px', fontWeight: 900 }}>{totalUsers}</p>
+    <div className="space-y-6">
+      {/* Stats cards */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-5 text-center">
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+            <Users className="w-5 h-5 text-purple-600" />
+          </div>
+          <p className="text-purple-600 text-xs font-bold mb-1">إجمالي المستخدمين</p>
+          <p className="text-gray-900 text-3xl font-black">{totalUsers}</p>
         </div>
-        <div style={{ backgroundColor: '#1e1b4b', border: '1px solid #3730a3', borderRadius: '20px', padding: '20px', textAlign: 'center' }}>
-          <Crown style={{ width: '24px', height: '24px', color: '#fbbf24', margin: '0 auto 8px' }} />
-          <h4 style={{ margin: 0, color: '#fde68a', fontSize: '12px', fontWeight: 700 }}>أعضاء VIP</h4>
-          <p style={{ margin: '4px 0 0', color: 'white', fontSize: '28px', fontWeight: 900 }}>
-            {recent?.filter(u => u.isPremium).length || 0}
-          </p>
+        <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl p-5 text-center">
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+            <Crown className="w-5 h-5 text-yellow-500" />
+          </div>
+          <p className="text-yellow-600 text-xs font-bold mb-1">أعضاء VIP</p>
+          <p className="text-gray-900 text-3xl font-black">{vipCount}</p>
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#111827', border: '1px solid #1e293b', borderRadius: '20px', padding: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>المستخدمين حسب الدولة</h3>
-          <div style={{ display: 'flex', gap: '10px' }}>
+      {/* Country stats */}
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Globe className="w-4 h-4 text-purple-500" />
+            <h3 className="font-black text-gray-900 text-base">المستخدمون حسب الدولة</h3>
+          </div>
+          <div className="flex items-center gap-2">
             <ResetVipsButton />
-            <button onClick={() => refetch()} style={{ background: 'none', border: 'none', color: '#7c3aed', cursor: 'pointer' }}><RefreshCw style={{ width: '16px' }} /></button>
+            <button onClick={() => refetch()} className="text-purple-500 hover:text-purple-700 transition-colors p-1">
+              <RefreshCw className="w-4 h-4" />
+            </button>
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div className="space-y-2">
           {stats?.map(s => (
-            <div key={s.country} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', backgroundColor: '#1f2937', borderRadius: '12px' }}>
-              <span style={{ fontSize: '14px', fontWeight: 600 }}>{COUNTRY_NAMES[s.country] || s.country}</span>
-              <span style={{ color: '#7c3aed', fontWeight: 900 }}>{s.count}</span>
+            <div key={s.country} className="flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-purple-50 rounded-xl transition-colors">
+              <span className="text-sm font-semibold text-gray-700">{COUNTRY_NAMES[s.country] || s.country}</span>
+              <span className="text-sm font-black text-purple-600">{s.count}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#111827', border: '1px solid #1e293b', borderRadius: '20px', padding: '20px' }}>
-        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, marginBottom: '16px' }}>آخر التسجيلات</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {/* Recent registrations */}
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="w-4 h-4 text-purple-500" />
+          <h3 className="font-black text-gray-900 text-base">آخر التسجيلات</h3>
+        </div>
+        <div className="divide-y divide-gray-100">
           {recent?.map(u => (
-            <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', borderBottom: '1px solid #1e293b' }}>
-              <img src={u.avatar || ''} style={{ width: '36px', height: '36px', borderRadius: '10px' }} />
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>{u.name}</p>
-                <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>{u.gender} • {u.age} سنة • {u.country}</p>
+            <div key={u.id} className="flex items-center gap-3 py-3">
+              <img
+                src={u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.id}`}
+                alt={u.name || ''}
+                className="w-10 h-10 rounded-xl object-cover border border-gray-200 flex-shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-900 truncate">{u.name}</p>
+                <p className="text-xs text-gray-400">{u.gender} • {u.age} سنة • {u.country}</p>
               </div>
-              <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                <p style={{ margin: 0, fontSize: '10px', color: '#4b5563' }}>{timeAgo(u.createdAt)}</p>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <p className="text-xs text-gray-400">{timeAgo(u.createdAt)}</p>
                 {u.isPremium && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Crown style={{ width: '12px', color: '#fbbf24' }} />
+                  <div className="flex items-center gap-1">
+                    <Crown className="w-3 h-3 text-yellow-500" />
                     {u.role !== 'admin' && <RevokeUserVipButton userId={u.id} />}
                   </div>
                 )}
@@ -409,7 +271,132 @@ function StatsTab() {
   );
 }
 
-// ── Calls Tab Component (Placeholder for existing logic) ──────────────────
+/* ══════════════════════════════════════════════════════════
+   Payments Tab
+══════════════════════════════════════════════════════════ */
+function PaymentsTab() {
+  const { data: payments, refetch, isLoading } = trpc.gifts.getPendingPayments.useQuery();
+  const handleMutation = trpc.gifts.handlePaymentRequest.useMutation({
+    onSuccess: () => { toast.success("تم تحديث حالة الطلب بنجاح"); refetch(); },
+    onError: (e) => toast.error(`فشل التحديث: ${e.message}`),
+  });
+
+  const handleAction = (requestId: number, status: 'approved' | 'rejected') => {
+    if (!confirm(`هل أنت متأكد من ${status === 'approved' ? 'قبول' : 'رفض'} هذا الطلب؟`)) return;
+    handleMutation.mutate({ requestId, status });
+  };
+
+  if (isLoading) return (
+    <div className="flex items-center justify-center py-16">
+      <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {!payments?.length ? (
+        <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-12 text-center">
+          <Wallet className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-400 font-semibold">لا توجد طلبات دفع معلقة</p>
+        </div>
+      ) : payments.map((pay) => (
+        <div key={pay.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 space-y-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="font-black text-gray-900 text-base">{pay.userName || 'مستخدم'}</h3>
+              <p className="text-xs text-gray-400 mt-0.5">ID: {pay.userId} • {timeAgo(pay.createdAt)}</p>
+            </div>
+            <span className={`text-xs font-black px-3 py-1 rounded-full ${pay.itemType === 'vip' ? 'bg-purple-100 text-purple-700' : 'bg-yellow-100 text-yellow-700'}`}>
+              {pay.itemType === 'vip' ? '👑 PREMIUM VIP' : `⭐ STARS (${pay.itemAmount})`}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 bg-gray-50 rounded-xl p-4">
+            <div>
+              <p className="text-gray-400 text-xs font-bold mb-1">المبلغ</p>
+              <p className="text-green-600 font-black">{pay.amount}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-xs font-bold mb-1">الوسيلة</p>
+              <p className="text-orange-500 font-bold text-sm">{pay.method === 'binance_pay' ? 'Binance Pay' : 'USDT (TRC20)'}</p>
+            </div>
+            <div className="col-span-2 border-t border-gray-200 pt-3 mt-1">
+              <p className="text-gray-400 text-xs font-bold mb-1">رقم المعاملة (TXID)</p>
+              <code className="text-gray-700 text-xs break-all">{pay.transactionId}</code>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => handleAction(pay.id, 'approved')}
+              disabled={handleMutation.isPending}
+              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 hover:from-green-600 hover:to-emerald-600 transition-all disabled:opacity-60 shadow-sm shadow-green-200"
+            >
+              <Check className="w-4 h-4" /> قبول وتفعيل
+            </button>
+            <button
+              onClick={() => handleAction(pay.id, 'rejected')}
+              disabled={handleMutation.isPending}
+              className="flex-1 bg-red-50 text-red-600 border border-red-200 font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-red-100 transition-all disabled:opacity-60"
+            >
+              <Ban className="w-4 h-4" /> رفض الطلب
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Active Call types
+══════════════════════════════════════════════════════════ */
+interface ActiveCall {
+  peerId1: string; peerId2: string;
+  name1: string; name2: string;
+  avatar1: string; avatar2: string;
+}
+interface RecMeta {
+  sessionId: string; name1: string; name2: string;
+  startTime: number; size: number;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Call Watcher (SSE)
+══════════════════════════════════════════════════════════ */
+function CallWatcher({ call, token, onClose }: { call: ActiveCall; token: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Radio className="w-4 h-4 text-red-500 animate-pulse" />
+            <h3 className="font-black text-gray-900">مراقبة المكالمة</h3>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex items-center justify-center gap-4 py-6 bg-gray-50 rounded-2xl mb-4">
+          <div className="text-center">
+            <img src={call.avatar1} alt={call.name1} className="w-14 h-14 rounded-2xl mx-auto mb-2 object-cover border-2 border-purple-200" />
+            <p className="text-sm font-bold text-gray-800">{call.name1}</p>
+          </div>
+          <div className="text-gray-400 font-black text-lg">↔</div>
+          <div className="text-center">
+            <img src={call.avatar2} alt={call.name2} className="w-14 h-14 rounded-2xl mx-auto mb-2 object-cover border-2 border-pink-200" />
+            <p className="text-sm font-bold text-gray-800">{call.name2}</p>
+          </div>
+        </div>
+        <p className="text-center text-xs text-gray-400">المراقبة المباشرة عبر SSE</p>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Calls Tab
+══════════════════════════════════════════════════════════ */
 function CallsTab({ token }: { token: string }) {
   const [calls, setCalls] = useState<ActiveCall[]>([]);
   const [watching, setWatching] = useState<ActiveCall | null>(null);
@@ -430,28 +417,38 @@ function CallsTab({ token }: { token: string }) {
   return (
     <div>
       {watching && <CallWatcher call={watching} token={token} onClose={() => setWatching(null)} />}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-        {calls.map((c, i) => (
-          <div key={i} style={{ backgroundColor: '#1f2937', borderRadius: '16px', padding: '16px', textAlign: 'center', border: '1px solid #374151' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '-8px', marginBottom: '12px' }}>
-              <img src={c.avatar1} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #111827' }} />
-              <img src={c.avatar2} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #111827', marginRight: '-12px' }} />
+
+      {!calls.length ? (
+        <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-12 text-center">
+          <Video className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-400 font-semibold">لا توجد مكالمات نشطة الآن</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {calls.map((c, i) => (
+            <div key={i} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 text-center hover:shadow-md transition-shadow">
+              <div className="flex justify-center mb-3">
+                <img src={c.avatar1} alt={c.name1} className="w-10 h-10 rounded-xl border-2 border-white shadow-sm object-cover" />
+                <img src={c.avatar2} alt={c.name2} className="w-10 h-10 rounded-xl border-2 border-white shadow-sm object-cover -mr-3" />
+              </div>
+              <p className="text-sm font-bold text-gray-800 mb-3">{c.name1} ↔ {c.name2}</p>
+              <button
+                onClick={() => setWatching(c)}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-500 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 hover:from-purple-700 hover:to-pink-600 transition-all"
+              >
+                <Radio className="w-3.5 h-3.5" /> مراقبة مباشرة
+              </button>
             </div>
-            <p style={{ margin: '0 0 12px', fontSize: '13px', fontWeight: 700 }}>{c.name1} & {c.name2}</p>
-            <button
-              onClick={() => setWatching(c)}
-              style={{ width: '100%', backgroundColor: '#7c3aed', color: 'white', border: 'none', borderRadius: '10px', padding: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-            >
-              <Radio style={{ width: '14px' }} /> مراقبة
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Recordings Tab Component (Placeholder for existing logic) ─────────────
+/* ══════════════════════════════════════════════════════════
+   Recordings Tab
+══════════════════════════════════════════════════════════ */
 function RecordingsTab({ token }: { token: string }) {
   const [recs, setRecs] = useState<RecMeta[]>([]);
   const [playing, setPlaying] = useState<RecMeta | null>(null);
@@ -464,21 +461,56 @@ function RecordingsTab({ token }: { token: string }) {
     } catch {}
   };
 
-  useEffect(() => {
-    fetchRecs();
-  }, []);
+  useEffect(() => { fetchRecs(); }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-      {recs.map(r => (
-        <div key={r.sessionId} style={{ backgroundColor: '#1f2937', padding: '12px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <p style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>{r.name1} ↔ {r.name2}</p>
-            <p style={{ margin: 0, fontSize: '11px', color: '#6b7280' }}>{fmtDate(r.startTime)} • {fmtSize(r.size)}</p>
+    <div className="space-y-3">
+      {playing && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setPlaying(null)}>
+          <div className="bg-white rounded-3xl shadow-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-black text-gray-900">{playing.name1} ↔ {playing.name2}</h3>
+              <button onClick={() => setPlaying(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <video
+              src={`/api/admin/recording/${playing.sessionId}?token=${encodeURIComponent(token)}`}
+              controls autoPlay
+              className="w-full rounded-2xl bg-gray-900"
+            />
           </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <a href={`/api/admin/recording/${r.sessionId}?token=${encodeURIComponent(token)}`} download style={{ color: '#9ca3af' }}><Download style={{ width: '18px' }} /></a>
-            <button onClick={() => setPlaying(r)} style={{ background: 'none', border: 'none', color: '#7c3aed', cursor: 'pointer' }}><Play style={{ width: '18px' }} /></button>
+        </div>
+      )}
+
+      {!recs.length ? (
+        <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-12 text-center">
+          <MonitorPlay className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-400 font-semibold">لا توجد تسجيلات محفوظة</p>
+        </div>
+      ) : recs.map(r => (
+        <div key={r.sessionId} className="bg-white border border-gray-100 rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4">
+          <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <MonitorPlay className="w-5 h-5 text-purple-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 truncate">{r.name1} ↔ {r.name2}</p>
+            <p className="text-xs text-gray-400">{fmtDate(r.startTime)} • {fmtSize(r.size)}</p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <a
+              href={`/api/admin/recording/${r.sessionId}?token=${encodeURIComponent(token)}`}
+              download
+              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+            >
+              <Download className="w-4 h-4" />
+            </a>
+            <button
+              onClick={() => setPlaying(r)}
+              className="w-8 h-8 flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-lg hover:from-purple-700 hover:to-pink-600 transition-all shadow-sm"
+            >
+              <Play className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       ))}
@@ -486,10 +518,88 @@ function RecordingsTab({ token }: { token: string }) {
   );
 }
 
-function fmtDate(ts: number) {
-  return new Date(ts).toLocaleString('ar-EG', { hour12: true, month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-}
-function fmtSize(b: number) {
-  if (b > 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`;
-  return `${Math.round(b / 1024)} KB`;
+/* ══════════════════════════════════════════════════════════
+   Main Admin Page
+══════════════════════════════════════════════════════════ */
+export default function Admin() {
+  const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState<'stats' | 'calls' | 'payments' | 'recordings'>('stats');
+  const [isVerified, setIsVerified] = useState(false);
+  const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
+
+  useEffect(() => {
+    if (token) setIsVerified(true);
+  }, [token]);
+
+  if (!isVerified) return <PasswordGate onVerified={() => setIsVerified(true)} />;
+
+  const tabs = [
+    { id: 'stats',      label: 'الإحصائيات',    icon: Globe,       badge: null },
+    { id: 'payments',   label: 'الطلبات المالية', icon: Wallet,      badge: 'جديد' },
+    { id: 'calls',      label: 'المكالمات',      icon: Video,       badge: null },
+    { id: 'recordings', label: 'التسجيلات',      icon: MonitorPlay, badge: null },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50" dir="rtl">
+      <Header />
+
+      {/* Page header */}
+      <div className="bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center shadow-md shadow-purple-200">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="font-black text-gray-900 text-lg leading-tight">لوحة الإدارة</h1>
+              <p className="text-xs text-gray-400">إدارة المستخدمين والمحتوى</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setLocation('/')}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-purple-600 font-semibold transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            الموقع
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="max-w-4xl mx-auto px-4 flex gap-1 overflow-x-auto pb-0 scrollbar-hide">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-all flex-shrink-0 ${
+                  active
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+                {tab.badge && (
+                  <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        {activeTab === 'stats'      && <StatsTab />}
+        {activeTab === 'payments'   && <PaymentsTab />}
+        {activeTab === 'calls'      && <CallsTab token={token!} />}
+        {activeTab === 'recordings' && <RecordingsTab token={token!} />}
+      </div>
+    </div>
+  );
 }
