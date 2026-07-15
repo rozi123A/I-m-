@@ -4,6 +4,7 @@ import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { detectCountry } from "./detectCountry";
 import { sdk } from "./sdk";
+import { ENV } from "./env";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -11,6 +12,33 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 export function registerOAuthRoutes(app: Express) {
+  // ── Google / OAuth login redirect ─────────────────────────────────────────
+  // Client calls GET /api/auth/login → server builds the portal URL and redirects.
+  // No VITE_ build-time vars needed on the client side.
+  app.get("/api/auth/login", (req: Request, res: Response) => {
+    const portalUrl = ENV.oAuthServerUrl;
+    const appId     = ENV.appId;
+
+    if (!portalUrl) {
+      res.status(503).send("OAuth not configured (OAUTH_SERVER_URL missing).");
+      return;
+    }
+
+    // Build redirect URI from the incoming request so it works on any domain
+    const proto       = req.headers["x-forwarded-proto"] ?? req.protocol ?? "https";
+    const host        = req.headers["x-forwarded-host"]  ?? req.headers.host;
+    const redirectUri = `${proto}://${host}/api/oauth/callback`;
+    const state       = Buffer.from(redirectUri).toString("base64");
+
+    const url = new URL(`${portalUrl}/app-auth`);
+    url.searchParams.set("appId",       appId ?? "");
+    url.searchParams.set("redirectUri", redirectUri);
+    url.searchParams.set("state",       state);
+    url.searchParams.set("type",        "signIn");
+
+    res.redirect(302, url.toString());
+  });
+
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");
     const state = getQueryParam(req, "state");
