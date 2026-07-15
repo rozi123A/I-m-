@@ -441,6 +441,50 @@ export const appRouter = router({
           .where(eq(users.id, ctx.user.id));
         return { success: true };
       }),
+
+    /**
+     * Direct admin login — no Google/OAuth required.
+     * Verifies ADMIN_SECRET, then upserts a permanent owner account,
+     * sets a real session cookie, and returns the token so the client
+     * can also store it in localStorage (same flow as guestLogin).
+     */
+    directLogin: publicProcedure
+      .input(z.object({ secret: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const { ENV } = await import('./_core/env');
+        if (!ENV.adminSecret || input.secret !== ENV.adminSecret) {
+          throw new Error("كلمة المرور خاطئة");
+        }
+
+        const db = await getDb();
+        if (!db) throw new Error("قاعدة البيانات غير متاحة");
+
+        const OWNER_OID = 'owner_admin_permanent';
+
+        // Upsert permanent admin user
+        await upsertUser({
+          openId:    OWNER_OID,
+          name:      'Admin',
+          role:      'admin',
+          isPremium: true,
+          credits:   999999,
+          wallet:    999999,
+        } as any);
+
+        // Issue a real JWT session (same as guestLogin / OAuth callback)
+        const sessionToken = await sdk.createSessionToken(OWNER_OID, {
+          name:        'Admin',
+          expiresInMs: ONE_YEAR_MS,
+        });
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, {
+          ...cookieOptions,
+          maxAge: ONE_YEAR_MS,
+        });
+
+        return { token: sessionToken };
+      }),
   }),
 
   social: router({

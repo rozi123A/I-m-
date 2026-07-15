@@ -46,29 +46,25 @@ function PasswordGate({ onVerified }: { onVerified: () => void }) {
   const [error, setError] = useState('');
   const [, setLocation] = useLocation();
 
-  const verifyMutation = trpc.admin.verifySecret.useMutation({
+  const directLoginMutation = trpc.admin.directLogin.useMutation({
     onSuccess: (data) => {
-      if (data.verified) {
-        sessionStorage.setItem(ADMIN_SESSION_KEY, data.token);
-        onVerified();
-      }
+      // Store real session token exactly like guestLogin does
+      try {
+        localStorage.setItem('guest_token', data.token);
+        localStorage.setItem('manus-cookie', `app_session_id=${data.token}`);
+      } catch { /* storage unavailable */ }
+      sessionStorage.setItem(ADMIN_SESSION_KEY, data.token);
+      onVerified();
+      // Reload so the app picks up the new session cookie
+      window.location.reload();
     },
     onError: (e) => setError(e.message),
   });
 
-  const activateMutation = trpc.admin.activate.useMutation();
-
   const handleSubmit = () => {
     setError('');
     if (!secret.trim()) return;
-    verifyMutation.mutate(
-      { secret: secret.trim() },
-      {
-        onSuccess: () => {
-          activateMutation.mutate({ secret: secret.trim() });
-        },
-      }
-    );
+    directLoginMutation.mutate({ secret: secret.trim() });
   };
 
   return (
