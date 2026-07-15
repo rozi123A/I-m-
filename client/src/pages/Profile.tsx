@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Save, ArrowLeft, Star, ShoppingCart, CheckCircle,
   User, Calendar, Zap, Crown, Camera,
-  Award, TrendingUp, Shield
+  Award, TrendingUp, Shield, Globe
 } from "lucide-react";
 
 async function compressImage(file: File, maxPx = 1200): Promise<string> {
