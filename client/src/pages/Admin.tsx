@@ -200,10 +200,10 @@ function PasswordGate({ onVerified }: { onVerified: () => void }) {
               </div>
               <button
                 onClick={handleSubmit}
-                disabled={verifyMutation.isPending}
+                disabled={directLoginMutation.isPending}
                 className="bg-gradient-to-r from-purple-600 to-pink-500 text-white font-bold px-5 py-3 rounded-xl hover:from-purple-700 hover:to-pink-600 transition-all shadow-md shadow-purple-200 disabled:opacity-60 flex-shrink-0"
               >
-                {verifyMutation.isPending ? '...' : 'دخول'}
+                {directLoginMutation.isPending ? '...' : 'دخول'}
               </button>
             </div>
 
