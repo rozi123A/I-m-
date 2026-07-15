@@ -346,31 +346,35 @@ export default function Profile() {
           )}
         </section>
 
-        {/* ── Admin Panel Entry (Visible for Admins or with Session) ─────── */}
-        {(u?.role === 'admin' || sessionStorage.getItem('admin_mode')) && (
-          <div className="grid grid-cols-2 gap-3 mt-4">
+        {/* ── Admin Panel (only for admins) ────────────────────────────── */}
+        {u?.role === 'admin' && (
+          <section className="rounded-2xl border border-red-500/40 bg-red-500/10 p-5 space-y-3">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-black text-white text-base">لوحة الإدارة</h2>
+                <p className="text-red-300/70 text-xs">مرئية للأدمن فقط</p>
+              </div>
+            </div>
             <button
               onClick={() => setLocation('/admin')}
-              className="flex flex-col items-center justify-center gap-2 bg-slate-800/50 border border-red-500/30 hover:border-red-500 hover:bg-red-500/10 rounded-2xl p-4 transition-all group"
+              className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:from-red-700 hover:to-orange-600 transition-all shadow-lg shadow-red-900/30"
             >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40 group-hover:scale-110 transition-transform">
-                <Shield className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-white font-bold text-xs">لوحة الإدارة</span>
+              <Shield className="w-4 h-4" />
+              دخول لوحة الإدارة
             </button>
-
             <a
               href="https://live-with-chat.onrender.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col items-center justify-center gap-2 bg-slate-800/50 border border-purple-500/30 hover:border-purple-500 hover:bg-purple-500/10 rounded-2xl p-4 transition-all group"
+              className="w-full bg-slate-800 border border-slate-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-700 transition-all shadow-lg"
             >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-900/40 group-hover:scale-110 transition-transform">
-                <Globe className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-white font-bold text-xs">البث المباشر</span>
+              <Globe className="w-4 h-4 text-purple-400" />
+              موقع البث المباشر
             </a>
-          </div>
+          </section>
         )}
 
       </div>
