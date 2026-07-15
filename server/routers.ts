@@ -443,6 +443,24 @@ export const appRouter = router({
       }),
 
     /**
+     * Delete every user row — full reset (admin only).
+     */
+    nukeAllUsers: adminProcedure
+      .mutation(async () => {
+        const db = await getDb();
+        if (!db) throw new Error("قاعدة البيانات غير متاحة");
+        // Delete dependent rows first to satisfy FK constraints
+        await db.execute(sql`DELETE FROM messages`);
+        await db.execute(sql`DELETE FROM notifications`);
+        await db.execute(sql`DELETE FROM friend_requests`);
+        await db.execute(sql`DELETE FROM gifts`);
+        await db.execute(sql`DELETE FROM payment_requests`);
+        await db.execute(sql`DELETE FROM call_recordings`);
+        const result = await db.execute(sql`DELETE FROM users`);
+        return { deleted: (result as any).rowCount ?? 0 };
+      }),
+
+    /**
      * Direct admin login — no Google/OAuth required.
      * Verifies ADMIN_SECRET, then upserts a permanent owner account,
      * sets a real session cookie, and returns the token so the client

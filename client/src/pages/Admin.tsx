@@ -38,6 +38,96 @@ function fmtSize(b: number) {
 }
 
 /* ══════════════════════════════════════════════════════════
+   Danger Zone Tab
+══════════════════════════════════════════════════════════ */
+function DangerTab() {
+  const [confirmed, setConfirmed] = useState(false);
+  const [done,      setDone]      = useState(false);
+
+  const nukeMutation = trpc.admin.nukeAllUsers.useMutation({
+    onSuccess: (data) => {
+      setDone(true);
+      setConfirmed(false);
+      // Clear local session too — all accounts gone
+      sessionStorage.removeItem('admin_mode');
+      localStorage.removeItem('guest_token');
+      localStorage.removeItem('manus-cookie');
+      setTimeout(() => { window.location.href = '/'; }, 2000);
+    },
+  });
+
+  if (done) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+          <Check className="w-8 h-8 text-green-600" />
+        </div>
+        <p className="text-gray-700 font-bold text-lg">تم حذف جميع المستخدمين ✓</p>
+        <p className="text-gray-400 text-sm">سيتم توجيهك لصفحة التسجيل...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-md mx-auto space-y-4 py-6">
+      <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center">
+            <AlertTriangle className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="font-black text-red-700 text-base">منطقة الخطر</h2>
+            <p className="text-red-400 text-xs">هذه العمليات لا يمكن التراجع عنها</p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-red-200 rounded-xl p-4 mb-4">
+          <p className="font-bold text-gray-800 mb-1">🗑️ حذف جميع المستخدمين</p>
+          <p className="text-gray-500 text-sm">
+            يحذف جميع الحسابات المسجّلة في الموقع بما فيها حسابك الحالي،
+            وجميع الرسائل والتسجيلات والطلبات المالية.
+          </p>
+        </div>
+
+        {!confirmed ? (
+          <button
+            onClick={() => setConfirmed(true)}
+            className="w-full bg-red-100 hover:bg-red-200 text-red-700 font-bold py-3 rounded-xl transition-all border border-red-300"
+          >
+            <AlertTriangle className="w-4 h-4 inline ml-2" />
+            حذف جميع المستخدمين
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-center text-red-600 font-bold text-sm">
+              ⚠️ هل أنت متأكد؟ هذا لا يمكن التراجع عنه!
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmed(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition-all"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={() => nukeMutation.mutate()}
+                disabled={nukeMutation.isPending}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-60"
+              >
+                {nukeMutation.isPending ? "جاري الحذف..." : "نعم، احذف الكل"}
+              </button>
+            </div>
+            {nukeMutation.error && (
+              <p className="text-red-500 text-sm text-center">{nukeMutation.error.message}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
    Password Gate
 ══════════════════════════════════════════════════════════ */
 function PasswordGate({ onVerified }: { onVerified: () => void }) {
@@ -560,7 +650,7 @@ function RecordingsTab({ token }: { token: string }) {
 ══════════════════════════════════════════════════════════ */
 export default function Admin() {
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<'stats' | 'calls' | 'payments' | 'recordings'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'calls' | 'payments' | 'recordings' | 'danger'>('stats');
   const [isVerified, setIsVerified] = useState(false);
   const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
 
@@ -575,6 +665,7 @@ export default function Admin() {
     { id: 'payments',   label: 'الطلبات المالية', icon: Wallet,      badge: 'جديد' },
     { id: 'calls',      label: 'المكالمات',      icon: Video,       badge: null },
     { id: 'recordings', label: 'التسجيلات',      icon: MonitorPlay, badge: null },
+    { id: 'danger',     label: 'الخطر',          icon: AlertTriangle, badge: null },
   ];
 
   return (
@@ -647,6 +738,7 @@ export default function Admin() {
         {activeTab === 'payments'   && <PaymentsTab />}
         {activeTab === 'calls'      && <CallsTab token={token!} />}
         {activeTab === 'recordings' && <RecordingsTab token={token!} />}
+        {activeTab === 'danger'     && <DangerTab />}
       </div>
     </div>
   );
