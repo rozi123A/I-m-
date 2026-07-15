@@ -556,13 +556,24 @@ export default function Admin() {
               <p className="text-xs text-gray-400">إدارة المستخدمين والمحتوى</p>
             </div>
           </div>
-          <button
-            onClick={() => setLocation('/')}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-purple-600 font-semibold transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            الموقع
-          </button>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://live-with-chat.onrender.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs bg-purple-50 text-purple-600 px-3 py-1.5 rounded-full hover:bg-purple-100 font-bold transition-all border border-purple-200"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              البث المباشر
+            </a>
+            <button
+              onClick={() => setLocation('/')}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-purple-600 font-semibold transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              الموقع
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
