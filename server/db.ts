@@ -218,9 +218,15 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (user.role !== undefined) {
       values.role = user.role;
       updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
+    } else {
+      // Auto-promote owner by openId OR by email (set OWNER_EMAIL or OWNER_OPEN_ID in env)
+      const isOwnerById = ENV.ownerOpenId && user.openId === ENV.ownerOpenId;
+      const isOwnerByEmail = ENV.ownerEmail && user.email &&
+        user.email.toLowerCase().trim() === ENV.ownerEmail;
+      if (isOwnerById || isOwnerByEmail) {
+        values.role = 'admin';
+        updateSet.role = 'admin';
+      }
     }
 
     if (!values.lastSignedIn) {

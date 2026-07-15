@@ -4,6 +4,8 @@ export const ENV = {
   databaseUrl: process.env.DATABASE_URL ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+  // 🔑 Set OWNER_EMAIL to your Google email to become admin automatically on every login
+  ownerEmail: (process.env.OWNER_EMAIL ?? "").toLowerCase().trim(),
   // 🔒 FIX: No hardcoded fallback — must be set in environment variables
   adminSecret: process.env.ADMIN_SECRET ?? "",
   isProduction: process.env.NODE_ENV === "production",
