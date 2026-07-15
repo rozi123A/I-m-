@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: connective
+    name: I-m-
     runtime: node
     plan: free
     buildCommand: NODE_ENV=development pnpm install --no-frozen-lockfile && NODE_ENV=production pnpm run build
@@ -10,8 +10,24 @@ services:
         sync: false
       - key: SESSION_SECRET
         sync: false
+      - key: ADMIN_SECRET
+        sync: false
+      - key: B2_APP_KEY
+        sync: false
+      - key: B2_BUCKET
+        sync: false
+      - key: B2_ENDPOINT
+        sync: false
+      - key: B2_KEY_ID
+        sync: false
+      - key: BINANCE_PAY_ID
+        sync: false
+      - key: USDT_TRC20_ADDRESS
+        sync: false
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
     headers:
       - path: /
         name: Cache-Control
