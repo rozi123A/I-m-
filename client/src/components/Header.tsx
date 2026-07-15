@@ -1,4 +1,4 @@
-import { Menu, X, LogOut, Video, UserCircle, Star, Languages } from "lucide-react";
+import { Menu, X, LogOut, Video, UserCircle, Star, Languages, Shield } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -67,15 +67,22 @@ export default function Header() {
               </button>
 
               {/* Name + profile link */}
-              <button onClick={handleProfile}
-                className="text-gray-800 font-semibold text-sm hover:text-purple-600 transition-colors flex items-center gap-1"
-              >
-                {(user as any).name || "المستخدم"}
-                {(user as { isPremium?: boolean }).isPremium && (
-                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+              <div className="flex items-center gap-2">
+                {((user as any)?.role === 'admin' || sessionStorage.getItem('admin_mode')) && (
+                  <button onClick={() => setLocation('/admin')} className="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors" title="لوحة الإدارة">
+                    <Shield className="w-4 h-4" />
+                  </button>
                 )}
-                <UserCircle className="w-3.5 h-3.5 text-purple-400" />
-              </button>
+                <button onClick={handleProfile}
+                  className="text-gray-800 font-semibold text-sm hover:text-purple-600 transition-colors flex items-center gap-1"
+                >
+                  {(user as any).name || "المستخدم"}
+                  {(user as { isPremium?: boolean }).isPremium && (
+                    <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                  )}
+                  <UserCircle className="w-3.5 h-3.5 text-purple-400" />
+                </button>
+              </div>
 
               <button onClick={handleStartChat}
                 className="bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold py-2 px-5 rounded-full hover:from-purple-700 hover:to-pink-600 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2"
@@ -167,12 +174,19 @@ export default function Header() {
                     className="w-11 h-11 rounded-full border-2 border-purple-400 object-cover flex-shrink-0"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-gray-800 flex items-center gap-1 truncate">
-                      {(user as any).name || "المستخدم"}
-                      {(user as { isPremium?: boolean }).isPremium && (
-                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-gray-800 flex items-center gap-1 truncate">
+                        {(user as any).name || "المستخدم"}
+                        {(user as { isPremium?: boolean }).isPremium && (
+                          <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+                        )}
+                      </p>
+                      {((user as any)?.role === 'admin' || sessionStorage.getItem('admin_mode')) && (
+                        <button onClick={() => { setIsMenuOpen(false); setLocation('/admin'); }} className="p-1.5 bg-red-100 text-red-600 rounded-lg">
+                          <Shield className="w-4 h-4" />
+                        </button>
                       )}
-                    </p>
+                    </div>
                     <p className="text-xs text-purple-500 font-medium">
                       {(user as any).isPremium ? `⭐ ${t('nav.vip_member')}` : t('nav.logged_in')}
                     </p>
