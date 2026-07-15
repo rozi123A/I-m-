@@ -353,6 +353,17 @@ export default function Profile() {
           )}
         </section>
 
+        {/* ── Hidden admin access (always visible, password-protected inside /admin) ── */}
+        <div className="flex justify-center pb-2">
+          <button
+            onClick={() => setLocation('/admin')}
+            className="flex items-center gap-1.5 text-white/15 hover:text-white/40 transition-colors text-xs py-2 px-4 rounded-full"
+          >
+            <Shield className="w-3 h-3" />
+            <span>إدارة</span>
+          </button>
+        </div>
+
       </div>
     </div>
   );
