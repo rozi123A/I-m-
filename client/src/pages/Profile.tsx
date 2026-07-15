@@ -348,19 +348,37 @@ export default function Profile() {
 
         {/* ── Admin Panel Entry (Visible for Admins or with Session) ─────── */}
         {(u?.role === 'admin' || sessionStorage.getItem('admin_mode')) && (
-          <button
-            onClick={() => setLocation('/admin')}
-            className="w-full flex items-center gap-4 bg-slate-800 border border-slate-700 hover:border-red-500/50 hover:bg-slate-700/80 rounded-2xl px-5 py-4 transition-all group"
-          >
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40 group-hover:scale-105 transition-transform flex-shrink-0">
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 text-right">
-              <p className="text-white font-black text-sm">لوحة تحكم الأدمن</p>
-              <p className="text-white/40 text-xs mt-0.5">محمية بكلمة المرور</p>
-            </div>
-            <ArrowLeft className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors rotate-180" />
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={() => setLocation('/admin')}
+              className="w-full flex items-center gap-4 bg-slate-800 border border-slate-700 hover:border-red-500/50 hover:bg-slate-700/80 rounded-2xl px-5 py-4 transition-all group"
+            >
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40 group-hover:scale-105 transition-transform flex-shrink-0">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 text-right">
+                <p className="text-white font-black text-sm">لوحة تحكم الأدمن</p>
+                <p className="text-white/40 text-xs mt-0.5">محمية بكلمة المرور</p>
+              </div>
+              <ArrowLeft className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors rotate-180" />
+            </button>
+
+            <a
+              href="https://live-with-chat.onrender.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-4 bg-slate-800 border border-slate-700 hover:border-purple-500/50 hover:bg-slate-700/80 rounded-2xl px-5 py-4 transition-all group"
+            >
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-900/40 group-hover:scale-105 transition-transform flex-shrink-0">
+                <Globe className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 text-right">
+                <p className="text-white font-black text-sm">موقع البث المباشر</p>
+                <p className="text-white/40 text-xs mt-0.5">فتح الموقع الخارجي</p>
+              </div>
+              <ArrowLeft className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors rotate-180" />
+            </a>
+          </div>
         )}
 
       </div>
