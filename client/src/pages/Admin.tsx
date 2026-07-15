@@ -84,7 +84,7 @@ function PasswordGate({ onVerified }: { onVerified: () => void }) {
             </div>
 
             <h1 className="text-2xl font-black text-gray-900 mb-1">لوحة الإدارة</h1>
-            <p className="text-gray-500 text-sm mb-7">أدخل كلمة المرور للدخول</p>
+            <p className="text-gray-500 text-sm mb-7">هذه المنطقة مخصصة للمسؤولين فقط</p>
 
             {error && (
               <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-5 text-right">

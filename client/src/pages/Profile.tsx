@@ -114,14 +114,7 @@ export default function Profile() {
               <Crown className="w-3.5 h-3.5" /> VIP
             </span>
           )}
-          {u?.role === 'admin' && (
-            <button
-              onClick={() => setLocation("/admin")}
-              className="flex items-center gap-1 bg-red-600/80 border border-red-500/60 text-white text-xs px-3 py-1.5 rounded-full font-bold"
-            >
-              <Shield className="w-3.5 h-3.5" /> أدمن
-            </button>
-          )}
+
           <button
             onClick={() => setLocation("/chat")}
             className="text-sm bg-gradient-to-r from-purple-600 to-pink-500 text-white px-4 py-1.5 rounded-full font-medium"
@@ -353,21 +346,22 @@ export default function Profile() {
           )}
         </section>
 
-        {/* ── Admin Panel Entry ─────────────────────────────────────────── */}
-        {/* الزر مرئي للجميع — الأمان داخل لوحة الأدمن بكلمة المرور */}
-        <button
-          onClick={() => setLocation('/admin')}
-          className="w-full flex items-center gap-4 bg-slate-800 border border-slate-700 hover:border-red-500/50 hover:bg-slate-700/80 rounded-2xl px-5 py-4 transition-all group"
-        >
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40 group-hover:scale-105 transition-transform flex-shrink-0">
-            <Shield className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1 text-right">
-            <p className="text-white font-black text-sm">لوحة تحكم الأدمن</p>
-            <p className="text-white/40 text-xs mt-0.5">محمية بكلمة المرور</p>
-          </div>
-          <ArrowLeft className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors rotate-180" />
-        </button>
+        {/* ── Admin Panel Entry (Only for Admins) ─────────────────────────── */}
+        {u?.role === 'admin' && (
+          <button
+            onClick={() => setLocation('/admin')}
+            className="w-full flex items-center gap-4 bg-slate-800 border border-slate-700 hover:border-red-500/50 hover:bg-slate-700/80 rounded-2xl px-5 py-4 transition-all group"
+          >
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40 group-hover:scale-105 transition-transform flex-shrink-0">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 text-right">
+              <p className="text-white font-black text-sm">لوحة تحكم الأدمن</p>
+              <p className="text-white/40 text-xs mt-0.5">محمية بكلمة المرور</p>
+            </div>
+            <ArrowLeft className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors rotate-180" />
+          </button>
+        )}
 
       </div>
     </div>
