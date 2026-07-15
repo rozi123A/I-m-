@@ -347,7 +347,7 @@ export default function Profile() {
         </section>
 
         {/* ── Admin Panel Entry (Visible for Admins or with Session) ─────── */}
-        {(u?.role === 'admin' || sessionStorage.getItem('admin_mode') || u?.name === 'Admin') && (
+        {(u?.role === 'admin' || sessionStorage.getItem('admin_mode')) && (
           <div className="grid grid-cols-2 gap-3 mt-4">
             <button
               onClick={() => setLocation('/admin')}
