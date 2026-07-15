@@ -561,9 +561,9 @@ export default function Admin() {
               href="https://live-with-chat.onrender.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs bg-purple-50 text-purple-600 px-3 py-1.5 rounded-full hover:bg-purple-100 font-bold transition-all border border-purple-200"
+              className="flex items-center gap-1.5 text-xs bg-purple-600 text-white px-4 py-2 rounded-xl hover:bg-purple-700 font-bold transition-all shadow-md shadow-purple-200"
             >
-              <Globe className="w-3.5 h-3.5" />
+              <Globe className="w-4 h-4" />
               البث المباشر
             </a>
             <button
