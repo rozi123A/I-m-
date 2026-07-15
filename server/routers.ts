@@ -461,14 +461,14 @@ export const appRouter = router({
 
         const OWNER_OID = 'owner_admin_permanent';
 
-        // Upsert permanent admin user
+        // Upsert permanent admin user with unlimited balance
         await upsertUser({
           openId:    OWNER_OID,
           name:      'Admin',
           role:      'admin',
           isPremium: true,
-          credits:   999999,
-          wallet:    999999,
+          credits:   999999999,
+          wallet:    999999999,
         } as any);
 
         // Issue a real JWT session (same as guestLogin / OAuth callback)

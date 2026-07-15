@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Save, ArrowLeft, Star, ShoppingCart, CheckCircle,
   User, Calendar, Zap, Crown, Camera,
-  Award, TrendingUp, Shield, Globe
+  Award, TrendingUp, Shield, Globe, LayoutDashboard, Users
 } from "lucide-react";
 
 async function compressImage(file: File, maxPx = 1200): Promise<string> {
@@ -35,18 +35,23 @@ const CREDIT_PACKAGES = [
   { credits: 1000, price: "4$", popular: false },
 ];
 
+const INF = "∞";
+
 export default function Profile() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, loading } = useAuth();
   const u = user as any;
+  const isAdmin = u?.role === "admin";
 
-  const [name,   setName]   = useState(u?.name   || "");
-  const [age,    setAge]    = useState<number>(u?.age ?? 18);
-  const [bio,    setBio]    = useState(u?.bio    || "");
-  const [avatar, setAvatar] = useState(u?.avatar || "");
-  const [gender, setGender] = useState<"male"|"female"|"other">(u?.gender || "other");
-  const [saved,  setSaved]  = useState(false);
-  const [showBuy, setShowBuy] = useState(false);
+  const [name,      setName]      = useState(u?.name   || "");
+  const [age,       setAge]       = useState<number>(u?.age ?? 18);
+  const [bio,       setBio]       = useState(u?.bio    || "");
+  const [avatar,    setAvatar]    = useState(u?.avatar || "");
+  const [gender,    setGender]    = useState<"male"|"female"|"other">(u?.gender || "other");
+  const [saved,     setSaved]     = useState(false);
+  const [showBuy,   setShowBuy]   = useState(false);
+  // true = admin view | false = user view (only matters for admins)
+  const [adminMode, setAdminMode] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -87,6 +92,10 @@ export default function Profile() {
     ? new Date(u.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "long" })
     : null;
 
+  // Stats shown — admins always see ∞
+  const starsDisplay   = isAdmin ? INF : (walletQuery.data?.wallet  ?? 0);
+  const creditsDisplay = isAdmin ? INF : (balanceQuery.data?.credits ?? 0);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
@@ -102,17 +111,47 @@ export default function Profile() {
 
       <input ref={fileRef} type="file" accept="image/*" capture="user" className="hidden" onChange={handleFileChange} />
 
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4 max-w-lg">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-3 max-w-lg">
           <button onClick={() => setLocation("/")} className="text-white/70 hover:text-white transition-colors p-1">
             <ArrowLeft className="w-5 h-5" />
           </button>
+
           <h1 className="text-xl font-bold text-white flex-1">الملف الشخصي</h1>
+
+          {/* VIP badge */}
           {u?.isPremium && (
             <span className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-xs px-3 py-1 rounded-full font-bold">
               <Crown className="w-3.5 h-3.5" /> VIP
             </span>
+          )}
+
+          {/* ── Admin mode toggle (admins only) ── */}
+          {isAdmin && (
+            <button
+              onClick={() => setAdminMode(v => !v)}
+              title={adminMode ? "التبديل إلى وضع المستخدم" : "التبديل إلى وضع الأدمن"}
+              className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border transition-all ${
+                adminMode
+                  ? "bg-red-600/20 border-red-500/50 text-red-300 hover:bg-red-600/30"
+                  : "bg-purple-600/20 border-purple-500/50 text-purple-300 hover:bg-purple-600/30"
+              }`}
+            >
+              {adminMode ? <Shield className="w-3.5 h-3.5" /> : <Users className="w-3.5 h-3.5" />}
+              {adminMode ? "أدمن" : "مستخدم"}
+            </button>
+          )}
+
+          {/* ── Admin panel shortcut icon (admins only) ── */}
+          {isAdmin && adminMode && (
+            <button
+              onClick={() => setLocation("/admin")}
+              title="لوحة التحكم"
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40 hover:opacity-90 transition-opacity active:scale-95"
+            >
+              <LayoutDashboard className="w-4 h-4 text-white" />
+            </button>
           )}
 
           <button
@@ -122,6 +161,17 @@ export default function Profile() {
             دردشة
           </button>
         </div>
+
+        {/* Mode banner */}
+        {isAdmin && (
+          <div className={`text-center text-xs py-1 font-semibold transition-all ${
+            adminMode
+              ? "bg-red-600/20 text-red-300"
+              : "bg-purple-600/20 text-purple-300"
+          }`}>
+            {adminMode ? "🛡️ وضع الأدمن — اضغط على «أدمن» للتبديل إلى وضع المستخدم" : "👤 وضع المستخدم — اضغط على «مستخدم» للتبديل إلى وضع الأدمن"}
+          </div>
+        )}
       </header>
 
       <div className="container mx-auto px-4 py-6 max-w-lg space-y-4">
@@ -132,6 +182,12 @@ export default function Profile() {
             {u?.isPremium && (
               <div className="absolute top-3 left-3 flex items-center gap-1 bg-yellow-400 text-gray-900 text-xs font-bold px-2.5 py-1 rounded-full shadow">
                 <Crown className="w-3.5 h-3.5" /> عضو VIP
+              </div>
+            )}
+            {/* Admin badge on banner */}
+            {isAdmin && adminMode && (
+              <div className="absolute top-3 right-3 flex items-center gap-1 bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
+                <Shield className="w-3 h-3" /> مدير
               </div>
             )}
           </div>
@@ -169,19 +225,19 @@ export default function Profile() {
               {u?.isPremium && <Shield className="w-5 h-5 text-green-400 mb-1" />}
             </div>
 
-            {/* Stats row — tap اكتمال 7 times to reveal admin box */}
+            {/* Stats row */}
             <div className="grid grid-cols-3 gap-3">
               <div className="bg-slate-900/50 rounded-xl p-3 text-center border border-slate-700">
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <Star className="w-3.5 h-3.5 text-yellow-400" />
-                  <span className="text-yellow-400 font-bold text-lg">{walletQuery.data?.wallet ?? 0}</span>
+                  <span className="text-yellow-400 font-bold text-lg">{starsDisplay}</span>
                 </div>
                 <p className="text-white/50 text-xs">نجوم</p>
               </div>
               <div className="bg-slate-900/50 rounded-xl p-3 text-center border border-slate-700">
                 <div className="flex items-center justify-center gap-1 mb-1">
                   <Zap className="w-3.5 h-3.5 text-purple-400" />
-                  <span className="text-purple-400 font-bold text-lg">{balanceQuery.data?.credits ?? 0}</span>
+                  <span className="text-purple-400 font-bold text-lg">{creditsDisplay}</span>
                 </div>
                 <p className="text-white/50 text-xs">نقاط</p>
               </div>
@@ -195,6 +251,37 @@ export default function Profile() {
             </div>
           </div>
         </section>
+
+        {/* ── Admin Panel card (admin mode only) ───────────────────────── */}
+        {isAdmin && adminMode && (
+          <section className="rounded-2xl border border-red-500/40 bg-red-500/10 p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-black text-white text-base">لوحة الإدارة</h2>
+                <p className="text-red-300/70 text-xs">مرئية للأدمن فقط</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setLocation("/admin")}
+              className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:from-red-700 hover:to-orange-600 transition-all shadow-lg shadow-red-900/30"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              دخول لوحة الإدارة
+            </button>
+            <a
+              href="https://live-with-chat.onrender.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-slate-800 border border-slate-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-700 transition-all"
+            >
+              <Globe className="w-4 h-4 text-purple-400" />
+              موقع البث المباشر
+            </a>
+          </section>
+        )}
 
         {/* ── Profile completion ────────────────────────────────────────── */}
         {completionPct < 100 && (
@@ -280,28 +367,6 @@ export default function Profile() {
           </button>
         </section>
 
-        {/* ── Admin Panel (only for admins) ────────────────────────────── */}
-        {u?.role === 'admin' && (
-          <section className="rounded-2xl border border-red-500/40 bg-red-500/10 p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="font-black text-white text-base">لوحة الإدارة</h2>
-                <p className="text-red-300/70 text-xs">مرئية للأدمن فقط</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setLocation('/admin')}
-              className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:from-red-700 hover:to-orange-600 transition-all shadow-lg shadow-red-900/30"
-            >
-              <Shield className="w-4 h-4" />
-              دخول لوحة الإدارة
-            </button>
-          </section>
-        )}
-
         {/* ── Credits & Stars ───────────────────────────────────────────── */}
         <section className="bg-slate-800 rounded-2xl border border-slate-700 p-5">
           <div className="flex items-center justify-between mb-3">
@@ -310,7 +375,7 @@ export default function Profile() {
             </h2>
             <div className="flex items-center gap-1.5 bg-yellow-500/20 border border-yellow-500/40 rounded-full px-3 py-1">
               <Star className="w-3.5 h-3.5 text-yellow-400" />
-              <span className="font-bold text-yellow-300 text-sm">{walletQuery.data?.wallet ?? 0}</span>
+              <span className="font-bold text-yellow-300 text-sm">{starsDisplay}</span>
             </div>
           </div>
           <p className="text-white/40 text-sm mb-4">استخدم نجومك لتفعيل رادار النجوم وإرسال هدايا افتراضية.</p>
@@ -345,37 +410,6 @@ export default function Profile() {
             </div>
           )}
         </section>
-
-        {/* ── Admin Panel (only for admins) ────────────────────────────── */}
-        {u?.role === 'admin' && (
-          <section className="rounded-2xl border border-red-500/40 bg-red-500/10 p-5 space-y-3">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-orange-500 flex items-center justify-center shadow-lg shadow-red-900/40">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="font-black text-white text-base">لوحة الإدارة</h2>
-                <p className="text-red-300/70 text-xs">مرئية للأدمن فقط</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setLocation('/admin')}
-              className="w-full bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:from-red-700 hover:to-orange-600 transition-all shadow-lg shadow-red-900/30"
-            >
-              <Shield className="w-4 h-4" />
-              دخول لوحة الإدارة
-            </button>
-            <a
-              href="https://live-with-chat.onrender.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full bg-slate-800 border border-slate-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-700 transition-all shadow-lg"
-            >
-              <Globe className="w-4 h-4 text-purple-400" />
-              موقع البث المباشر
-            </a>
-          </section>
-        )}
 
       </div>
     </div>
