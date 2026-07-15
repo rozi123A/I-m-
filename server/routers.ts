@@ -240,7 +240,6 @@ export const appRouter = router({
         });
         return { success: true };
       }),
-      }),
 
     /** Get pending payment requests (Admin only) */
     getPendingPayments: adminProcedure.query(async () => {
