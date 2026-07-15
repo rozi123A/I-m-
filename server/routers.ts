@@ -235,8 +235,8 @@ export const appRouter = router({
         });
         await createNotification(ctx.user.id, {
           type: 'system',
-          title: '=� *E '3*D'E 7D(C',
-          message: '3J*E E1',9) 7D( 'D/A9 H*A9JD 'DEJ2'* .D'D 24 3'9) (9/ 'D*-BB.',
+          title: "✅ تم استلام طلبك",
+          message: "سيتم مراجعة طلب الدفع وتفعيل المميزات خلال 24 ساعة بعد التحقق.",
         });
         return { success: true };
       }),
