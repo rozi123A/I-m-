@@ -10,24 +10,25 @@ import "./index.css";
 
 // ── Auto-reload on new deploy ────────────────────────────────────────────────
 // Fetches /api/version (never cached) and compares with the value stored in
-// localStorage. When a new server starts (new deploy), the version changes and
-// the page reloads once to load fresh assets — works even when index.html is
-// served from browser cache.
-(async () => {
+// localStorage. Runs once on load AND every 30 s while the tab is open.
+// When Render finishes a deploy the version changes → page reloads automatically
+// so the user always sees the latest build without needing to refresh manually.
+const _checkVersion = async () => {
   try {
     const res = await fetch("/api/version", { cache: "no-store" });
     if (!res.ok) return;
     const { version } = await res.json();
     const stored = localStorage.getItem("_app_build_v");
     if (stored && stored !== version) {
-      // New deploy detected — reload to pick up fresh JS/CSS
       localStorage.setItem("_app_build_v", version);
       window.location.reload();
       return;
     }
     localStorage.setItem("_app_build_v", version);
   } catch { /* offline or server error — skip silently */ }
-})();
+};
+_checkVersion();                          // run immediately on page load
+setInterval(_checkVersion, 30_000);      // then every 30 seconds
 // ────────────────────────────────────────────────────────────────────────────
 
 const queryClient = new QueryClient();
