@@ -66,13 +66,19 @@ const trpcClient = trpc.createClient({
       url: (import.meta.env.VITE_API_URL || "") + "/api/trpc",
       transformer: superjson,
       headers() {
-        // 1. Guest token stored in localStorage (most reliable across restarts)
+        // 1. Admin token (highest priority — set when entering admin password)
+        try {
+          const adminToken = localStorage.getItem("admin_token");
+          if (adminToken) return { Authorization: `Bearer ${adminToken}` };
+        } catch { /* storage unavailable */ }
+
+        // 2. Guest token stored in localStorage
         try {
           const guestToken = localStorage.getItem("guest_token");
           if (guestToken) return { Authorization: `Bearer ${guestToken}` };
         } catch { /* storage unavailable */ }
 
-        // 2. Preview auto-login fallback (Replit iframe / Safari ITP / WebView)
+        // 3. Preview auto-login fallback (Replit iframe / Safari ITP / WebView)
         try {
           const raw = sessionStorage.getItem("manus-cookie");
           if (raw) {

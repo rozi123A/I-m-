@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useLocation } from 'wouter';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { httpBatchLink } from '@trpc/client';
-import superjson from 'superjson';
 import {
   Users, Globe, Crown, RefreshCw, ArrowLeft, Lock, Shield,
   Eye, EyeOff, Video, Radio, X, MonitorPlay, Trash2, Play,
@@ -12,7 +9,7 @@ import {
 import { toast } from 'sonner';
 import Header from '@/components/Header';
 
-const ADMIN_SESSION_KEY = 'admin_mode';
+const ADMIN_TOKEN_KEY = 'admin_token';
 
 const COUNTRY_NAMES: Record<string, string> = {
   SA:'السعودية 🇸🇦', AE:'الإمارات 🇦🇪', EG:'مصر 🇪🇬', KW:'الكويت 🇰🇼',
@@ -51,8 +48,8 @@ function DangerTab() {
     onSuccess: (data) => {
       setDone(true);
       setConfirmed(false);
-      // Clear local session too — all accounts gone
-      sessionStorage.removeItem('admin_mode');
+      // Clear all session tokens — all accounts gone
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
       localStorage.removeItem('guest_token');
       localStorage.removeItem('manus-cookie');
       setTimeout(() => { window.location.href = '/'; }, 2000);
@@ -131,33 +128,6 @@ function DangerTab() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   Admin-scoped tRPC Provider
-   Sends the admin token as Bearer — leaves the regular user
-   session cookie untouched in the browser.
-══════════════════════════════════════════════════════════ */
-function AdminTrpcProvider({ token, children }: { token: string; children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
-  const [adminClient] = useState(() =>
-    trpc.createClient({
-      links: [
-        httpBatchLink({
-          url: (import.meta.env.VITE_API_URL || '') + '/api/trpc',
-          transformer: superjson,
-          headers: () => ({ Authorization: `Bearer ${token}` }),
-          fetch: (input, init) =>
-            globalThis.fetch(input, { ...(init ?? {}), credentials: 'include' }),
-        }),
-      ],
-    })
-  );
-  return (
-    <trpc.Provider client={adminClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    </trpc.Provider>
-  );
-}
-
-/* ══════════════════════════════════════════════════════════
    Password Gate
 ══════════════════════════════════════════════════════════ */
 function PasswordGate({ onVerified }: { onVerified: () => void }) {
@@ -168,11 +138,12 @@ function PasswordGate({ onVerified }: { onVerified: () => void }) {
 
   const directLoginMutation = trpc.admin.directLogin.useMutation({
     onSuccess: (data) => {
-      // Store ONLY in sessionStorage — do NOT touch localStorage so the
-      // regular guest session cookie/token is left completely untouched.
-      sessionStorage.setItem(ADMIN_SESSION_KEY, data.token);
+      // Store admin token in localStorage so the whole app sends it as Bearer
+      // (main.tsx reads admin_token first → all pages become admin-authenticated)
+      localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
       onVerified();
-      // No reload needed — AdminTrpcProvider picks up the token immediately.
+      // Reload so the React tree re-mounts with the admin identity
+      window.location.reload();
     },
     onError: (e) => setError(e.message),
   });
@@ -676,25 +647,18 @@ function RecordingsTab({ token }: { token: string }) {
 ══════════════════════════════════════════════════════════ */
 export default function Admin() {
   const [isVerified, setIsVerified] = useState(false);
-  const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
 
   useEffect(() => {
-    if (token) setIsVerified(true);
-  }, [token]);
+    if (localStorage.getItem(ADMIN_TOKEN_KEY)) setIsVerified(true);
+  }, []);
 
   if (!isVerified) return <PasswordGate onVerified={() => setIsVerified(true)} />;
-
-  // token is guaranteed non-null here (isVerified === true only when token exists)
-  return (
-    <AdminTrpcProvider token={token!}>
-      <AdminDashboard token={token!} />
-    </AdminTrpcProvider>
-  );
+  return <AdminDashboard />;
 }
 
-/* Extracted so it renders inside AdminTrpcProvider's context */
-function AdminDashboard({ token }: { token: string }) {
+function AdminDashboard() {
   const [, setLocation] = useLocation();
+  const token = localStorage.getItem(ADMIN_TOKEN_KEY) ?? '';
   const [activeTab, setActiveTab] = useState<'stats' | 'calls' | 'payments' | 'recordings' | 'danger'>('stats');
 
   const tabs = [
@@ -737,6 +701,17 @@ function AdminDashboard({ token }: { token: string }) {
             >
               <ArrowLeft className="w-4 h-4" />
               الموقع
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem(ADMIN_TOKEN_KEY);
+                window.location.href = '/';
+              }}
+              className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-xl font-bold transition-all"
+              title="تسجيل خروج من الأدمن"
+            >
+              <X className="w-3.5 h-3.5" />
+              خروج
             </button>
           </div>
         </div>
