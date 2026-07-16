@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useLocation } from 'wouter';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { httpBatchLink } from '@trpc/client';
+import superjson from 'superjson';
 import {
   Users, Globe, Crown, RefreshCw, ArrowLeft, Lock, Shield,
   Eye, EyeOff, Video, Radio, X, MonitorPlay, Trash2, Play,
@@ -128,6 +131,33 @@ function DangerTab() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   Admin-scoped tRPC Provider
+   Sends the admin token as Bearer — leaves the regular user
+   session cookie untouched in the browser.
+══════════════════════════════════════════════════════════ */
+function AdminTrpcProvider({ token, children }: { token: string; children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+  const [adminClient] = useState(() =>
+    trpc.createClient({
+      links: [
+        httpBatchLink({
+          url: (import.meta.env.VITE_API_URL || '') + '/api/trpc',
+          transformer: superjson,
+          headers: () => ({ Authorization: `Bearer ${token}` }),
+          fetch: (input, init) =>
+            globalThis.fetch(input, { ...(init ?? {}), credentials: 'include' }),
+        }),
+      ],
+    })
+  );
+  return (
+    <trpc.Provider client={adminClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </trpc.Provider>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
    Password Gate
 ══════════════════════════════════════════════════════════ */
 function PasswordGate({ onVerified }: { onVerified: () => void }) {
@@ -138,15 +168,11 @@ function PasswordGate({ onVerified }: { onVerified: () => void }) {
 
   const directLoginMutation = trpc.admin.directLogin.useMutation({
     onSuccess: (data) => {
-      // Store real session token exactly like guestLogin does
-      try {
-        localStorage.setItem('guest_token', data.token);
-        localStorage.setItem('manus-cookie', `app_session_id=${data.token}`);
-      } catch { /* storage unavailable */ }
+      // Store ONLY in sessionStorage — do NOT touch localStorage so the
+      // regular guest session cookie/token is left completely untouched.
       sessionStorage.setItem(ADMIN_SESSION_KEY, data.token);
       onVerified();
-      // Reload so the app picks up the new session cookie
-      window.location.reload();
+      // No reload needed — AdminTrpcProvider picks up the token immediately.
     },
     onError: (e) => setError(e.message),
   });
@@ -649,8 +675,6 @@ function RecordingsTab({ token }: { token: string }) {
    Main Admin Page
 ══════════════════════════════════════════════════════════ */
 export default function Admin() {
-  const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<'stats' | 'calls' | 'payments' | 'recordings' | 'danger'>('stats');
   const [isVerified, setIsVerified] = useState(false);
   const token = sessionStorage.getItem(ADMIN_SESSION_KEY);
 
@@ -659,6 +683,19 @@ export default function Admin() {
   }, [token]);
 
   if (!isVerified) return <PasswordGate onVerified={() => setIsVerified(true)} />;
+
+  // token is guaranteed non-null here (isVerified === true only when token exists)
+  return (
+    <AdminTrpcProvider token={token!}>
+      <AdminDashboard token={token!} />
+    </AdminTrpcProvider>
+  );
+}
+
+/* Extracted so it renders inside AdminTrpcProvider's context */
+function AdminDashboard({ token }: { token: string }) {
+  const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState<'stats' | 'calls' | 'payments' | 'recordings' | 'danger'>('stats');
 
   const tabs = [
     { id: 'stats',      label: 'الإحصائيات',    icon: Globe,       badge: null },

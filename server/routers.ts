@@ -479,26 +479,25 @@ export const appRouter = router({
 
         const OWNER_OID = 'owner_admin_permanent';
 
-        // Upsert permanent admin user with unlimited balance
+        // Upsert the permanent admin user (name / role / premium)
         await upsertUser({
-          openId:    OWNER_OID,
-          name:      'Admin',
-          role:      'admin',
+          openId: OWNER_OID,
+          name:   'Admin',
+          role:   'admin',
           isPremium: true,
-          credits:   999999999,
-          wallet:    999999999,
         } as any);
 
-        // Issue a real JWT session (same as guestLogin / OAuth callback)
+        // Force-set unlimited credits & wallet directly (upsertUser ignores these fields)
+        await db
+          .update(users)
+          .set({ credits: 999999999, wallet: 999999999, isPremium: true, role: 'admin' })
+          .where(eq(users.openId, OWNER_OID));
+
+        // Issue a JWT token — returned to the client only (no cookie set so the
+        // regular-user session cookie is left untouched in the browser).
         const sessionToken = await sdk.createSessionToken(OWNER_OID, {
           name:        'Admin',
           expiresInMs: ONE_YEAR_MS,
-        });
-
-        const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, sessionToken, {
-          ...cookieOptions,
-          maxAge: ONE_YEAR_MS,
         });
 
         return { token: sessionToken };
